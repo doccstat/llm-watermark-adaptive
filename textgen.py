@@ -225,7 +225,7 @@ for batch in range(n_batches):
     null_probs.append(null_prob)
     watermarked_sample, watermarked_prob = generate_watermark(prompts[idx], seeds[idx])
     watermarked_samples.append(watermarked_sample[:, prompt_tokens:])
-    watermarked_probs.append(watermarked_prob)
+    watermarked_probs.append(watermarked_prob[:, prompt_tokens:])
     pbar.update(1)
 pbar.close()
 null_samples = torch.vstack(null_samples)
