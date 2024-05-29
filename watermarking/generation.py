@@ -36,7 +36,7 @@ def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_
             batch_size), (offset.squeeze()+i) % n])
         tokens = tokens.to(model.device)
         sampling_prob = sampling_prob.to(model.device)
-        sampling_probs = torch.cat([sampling_probs, sampling_prob.unsqueeze(-1)], dim=-1)
+        sampling_probs = torch.cat([sampling_probs, sampling_prob], dim=-1)
         inputs = torch.cat([inputs, tokens], dim=-1)
 
         past = output.past_key_values
