@@ -154,7 +154,7 @@ seeds_writer.writerow(np.asarray(seeds.squeeze().numpy()))
 seeds_save.close()
 
 if args.method == "transform":
-    def generate_watermark(prompt, seed): return generate(
+    def generate_watermark(prompt, seed, empty_prompts): return generate(
         model,
         prompt,
         vocab_size,
@@ -163,11 +163,12 @@ if args.method == "transform":
         seed,
         transform_key_func,
         transform_sampling,
-        random_offset=args.offset
+        random_offset=args.offset,
+        empty_prompts=empty_prompts
     )
 
 elif args.method == "gumbel":
-    def generate_watermark(prompt, seed): return generate(
+    def generate_watermark(prompt, seed, empty_prompts): return generate(
         model,
         prompt,
         vocab_size,
@@ -176,7 +177,8 @@ elif args.method == "gumbel":
         seed,
         gumbel_key_func,
         gumbel_sampling,
-        random_offset=args.offset
+        random_offset=args.offset,
+        empty_prompts=empty_prompts
     )
 else:
     raise
@@ -209,6 +211,19 @@ while itm < T:
     itm += 1
     pbar.update(1)
 
+empty_prompt_save = open(args.save + '-empty-prompt.txt', 'w')
+empty_text = ""
+empty_token = tokenizer.encode(
+    empty_text,
+    return_tensors='pt',
+    truncation=True,
+    max_length=2048-buffer_tokens
+)[0]
+print(empty_token)
+empty_prompts = [empty_token for _ in range(T)]
+empty_prompt_save.write(str(empty_prompts))
+empty_prompt_save.close()
+
 pbar.close()
 prompt_save.close()
 
@@ -229,12 +244,12 @@ for batch in range(n_batches):
                        min(T, (batch + 1) * args.batch_size))
 
     null_sample, null_prob, null_empty_prob = generate_rnd(
-        prompts[idx], new_tokens+buffer_tokens, model)
+        prompts[idx], new_tokens+buffer_tokens, model, empty_prompts)
     null_samples.append(null_sample[:, prompt_tokens:])
     null_probs.append(null_prob[:, buffer_tokens:])
     null_empty_probs.append(null_empty_prob[:, buffer_tokens:])
     watermarked_sample, watermarked_prob, watermarked_empty_prob = generate_watermark(
-        prompts[idx], seeds[idx])
+        prompts[idx], seeds[idx], empty_prompts)
     watermarked_samples.append(watermarked_sample[:, prompt_tokens:])
     watermarked_probs.append(watermarked_prob[:, buffer_tokens:])
     watermarked_empty_probs.append(watermarked_empty_prob[:, buffer_tokens:])

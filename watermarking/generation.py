@@ -1,7 +1,7 @@
 import torch
 
 
-def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_offset=True):
+def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_offset=True, empty_prompts=None):
     batch_size = len(prompts)
 
     generator = torch.Generator()
@@ -21,7 +21,7 @@ def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_
         offset = torch.zeros(size=(batch_size,), dtype=torch.int64)
 
     inputs = prompts.to(model.device)
-    empty_inputs = torch.empty((batch_size, 0), dtype=torch.int64).to(model.device)
+    empty_inputs = empty_prompts.to(model.device)
 
     sampling_probs = torch.zeros((batch_size, 0)).to(model.device)
     empty_sampling_probs = torch.zeros((batch_size, 0)).to(model.device)
@@ -69,9 +69,9 @@ def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_
 # generate unwatermarked completions of token length m given list of prompts
 
 
-def generate_rnd(prompts, m, model):
+def generate_rnd(prompts, m, model, empty_prompts):
     inputs = prompts.to(model.device)
-    empty_inputs = torch.empty((inputs.shape[0], 0), dtype=torch.int64).to(model.device)
+    empty_inputs = empty_prompts.to(model.device)
 
     attn = torch.ones_like(inputs)
 
