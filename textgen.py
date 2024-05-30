@@ -228,6 +228,7 @@ prompt_save.close()
 
 prompts = torch.vstack(prompts)
 empty_prompts = torch.vstack(empty_prompts)
+print(empty_prompts)
 
 null_samples = []
 watermarked_samples = []

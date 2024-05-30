@@ -45,7 +45,7 @@ def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_
 
         probs = torch.nn.functional.softmax(output.logits[:, -1], dim=-1).cpu()
         empty_probs = torch.nn.functional.softmax(
-            empty_output.logits[:, -1], dim=-1).cpu()
+            empty_output.logits[:, -1], dim=-1)
 
         tokens, sampling_prob = sampler(probs, pis, xis[torch.arange(
             batch_size), (offset.squeeze()+i) % n])
