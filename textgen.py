@@ -212,7 +212,12 @@ while itm < T:
     pbar.update(1)
 
 empty_prompt_save = open(args.save + '-empty-prompt.txt', 'w')
-empty_text = ""
+if args.model == "facebook/opt-1.3b":
+    empty_text = ""
+elif args.model == "openai-community/gpt2":
+    empty_text = " "
+else:
+    raise
 empty_token = tokenizer.encode(
     empty_text,
     return_tensors='pt',
@@ -228,7 +233,6 @@ prompt_save.close()
 
 prompts = torch.vstack(prompts)
 empty_prompts = torch.vstack(empty_prompts)
-print(empty_prompts)
 
 null_samples = []
 watermarked_samples = []
