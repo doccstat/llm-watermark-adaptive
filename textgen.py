@@ -221,13 +221,14 @@ empty_token = tokenizer.encode(
 )[0]
 print(empty_token)
 empty_prompts = [empty_token for _ in range(T)]
-empty_prompt_save.write(str(empty_prompts))
+empty_prompt_save.write(str(empty_token))
 empty_prompt_save.close()
 
 pbar.close()
 prompt_save.close()
 
 prompts = torch.vstack(prompts)
+empty_prompts = torch.vstack(empty_prompts)
 
 null_samples = []
 watermarked_samples = []
