@@ -19,55 +19,98 @@ def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_
         offset = torch.randint(n, size=(batch_size,))
     else:
         offset = torch.zeros(size=(batch_size,), dtype=torch.int64)
+
     inputs = prompts.to(model.device)
+    empty_inputs = torch.empty((batch_size, 0), dtype=torch.int64).to(model.device)
+
     sampling_probs = torch.zeros((batch_size, 0)).to(model.device)
+    empty_sampling_probs = torch.zeros((batch_size, 0)).to(model.device)
+
     attn = torch.ones_like(inputs)
+
     past = None
+    empty_past = None
+
     for i in range(m):
         with torch.no_grad():
             if past:
                 output = model(
                     inputs[:, -1:], past_key_values=past, attention_mask=attn)
+                empty_output = model(
+                    empty_inputs[:, -1:], past_key_values=empty_past, attention_mask=attn)
             else:
                 output = model(inputs)
+                empty_output = model(empty_inputs)
 
         probs = torch.nn.functional.softmax(output.logits[:, -1], dim=-1).cpu()
+        empty_probs = torch.nn.functional.softmax(
+            empty_output.logits[:, -1], dim=-1).cpu()
+
         tokens, sampling_prob = sampler(probs, pis, xis[torch.arange(
             batch_size), (offset.squeeze()+i) % n])
         tokens = tokens.to(model.device)
+        empty_sampling_prob = torch.gather(empty_probs, 1, tokens)
         sampling_prob = sampling_prob.to(model.device)
+
         sampling_probs = torch.cat([sampling_probs, sampling_prob], dim=-1)
+        empty_sampling_probs = torch.cat(
+            [empty_sampling_probs, empty_sampling_prob], dim=-1)
+
         inputs = torch.cat([inputs, tokens], dim=-1)
+        empty_inputs = torch.cat([empty_inputs, tokens], dim=-1)
 
         past = output.past_key_values
+        empty_past = empty_output.past_key_values
+
         attn = torch.cat([attn, attn.new_ones((attn.shape[0], 1))], dim=-1)
 
-    return inputs.detach().cpu(), sampling_probs.detach().cpu()
+    return inputs.detach().cpu(), sampling_probs.detach().cpu(), empty_sampling_probs.detach().cpu()
 
 # generate unwatermarked completions of token length m given list of prompts
 
 
 def generate_rnd(prompts, m, model):
     inputs = prompts.to(model.device)
+    empty_inputs = torch.empty((inputs.shape[0], 0), dtype=torch.int64).to(model.device)
+
     attn = torch.ones_like(inputs)
+
     past = None
+    empty_past = None
+
     sampling_probs = torch.zeros((inputs.shape[0], 0)).to(model.device)
+    empty_sampling_probs = torch.zeros((inputs.shape[0], 0)).to(model.device)
+
     for i in range(m):
         with torch.no_grad():
             if past:
                 output = model(
                     inputs[:, -1:], past_key_values=past, attention_mask=attn)
+                empty_output = model(
+                    empty_inputs[:, -1:], past_key_values=empty_past, attention_mask=attn)
             else:
                 output = model(inputs)
+                empty_output = model(empty_inputs)
 
         probs = torch.nn.functional.softmax(output.logits[:, -1], dim=-1)
+        empty_probs = torch.nn.functional.softmax(
+            empty_output.logits[:, -1], dim=-1)
 
         tokens = torch.multinomial(probs, 1)
+
         sampling_prob = torch.gather(probs, 1, tokens)
+        empty_sampling_prob = torch.gather(empty_probs, 1, tokens)
+
         sampling_probs = torch.cat([sampling_probs, sampling_prob], dim=-1)
+        empty_sampling_probs = torch.cat(
+            [empty_sampling_probs, empty_sampling_prob], dim=-1)
+
         inputs = torch.cat([inputs, tokens], dim=1)
+        empty_inputs = torch.cat([empty_inputs, tokens], dim=1)
 
         past = output.past_key_values
+        empty_past = empty_output.past_key_values
+
         attn = torch.cat([attn, attn.new_ones((attn.shape[0], 1))], dim=-1)
 
-    return inputs.detach().cpu(), sampling_probs.detach().cpu()
+    return inputs.detach().cpu(), sampling_probs.detach().cpu(), empty_sampling_probs.detach().cpu()
