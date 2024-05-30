@@ -219,7 +219,6 @@ empty_token = tokenizer.encode(
     truncation=True,
     max_length=2048-buffer_tokens
 )[0]
-print(empty_token)
 empty_prompts = [empty_token for _ in range(T)]
 empty_prompt_save.write(str(empty_token))
 empty_prompt_save.close()
@@ -245,12 +244,12 @@ for batch in range(n_batches):
                        min(T, (batch + 1) * args.batch_size))
 
     null_sample, null_prob, null_empty_prob = generate_rnd(
-        prompts[idx], new_tokens+buffer_tokens, model, empty_prompts)
+        prompts[idx], new_tokens+buffer_tokens, model, empty_prompts[idx])
     null_samples.append(null_sample[:, prompt_tokens:])
     null_probs.append(null_prob[:, buffer_tokens:])
     null_empty_probs.append(null_empty_prob[:, buffer_tokens:])
     watermarked_sample, watermarked_prob, watermarked_empty_prob = generate_watermark(
-        prompts[idx], seeds[idx], empty_prompts)
+        prompts[idx], seeds[idx], empty_prompts[idx])
     watermarked_samples.append(watermarked_sample[:, prompt_tokens:])
     watermarked_probs.append(watermarked_prob[:, buffer_tokens:])
     watermarked_empty_probs.append(watermarked_empty_prob[:, buffer_tokens:])
