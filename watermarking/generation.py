@@ -27,6 +27,7 @@ def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_
     empty_sampling_probs = torch.zeros((batch_size, 0)).to(model.device)
 
     attn = torch.ones_like(inputs)
+    empty_attn = torch.ones_like(empty_inputs)
 
     past = None
     empty_past = None
@@ -37,7 +38,7 @@ def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_
                 output = model(
                     inputs[:, -1:], past_key_values=past, attention_mask=attn)
                 empty_output = model(
-                    empty_inputs[:, -1:], past_key_values=empty_past, attention_mask=attn)
+                    empty_inputs[:, -1:], past_key_values=empty_past, attention_mask=empty_attn)
             else:
                 output = model(inputs)
                 empty_output = model(empty_inputs)
@@ -63,6 +64,8 @@ def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_
         empty_past = empty_output.past_key_values
 
         attn = torch.cat([attn, attn.new_ones((attn.shape[0], 1))], dim=-1)
+        empty_attn = torch.cat(
+            [empty_attn, attn.new_ones((attn.shape[0], 1))], dim=-1)
 
     return inputs.detach().cpu(), sampling_probs.detach().cpu(), empty_sampling_probs.detach().cpu()
 
@@ -74,6 +77,7 @@ def generate_rnd(prompts, m, model, empty_prompts):
     empty_inputs = empty_prompts.to(model.device)
 
     attn = torch.ones_like(inputs)
+    empty_attn = torch.ones_like(empty_inputs)
 
     past = None
     empty_past = None
@@ -87,7 +91,7 @@ def generate_rnd(prompts, m, model, empty_prompts):
                 output = model(
                     inputs[:, -1:], past_key_values=past, attention_mask=attn)
                 empty_output = model(
-                    empty_inputs[:, -1:], past_key_values=empty_past, attention_mask=attn)
+                    empty_inputs[:, -1:], past_key_values=empty_past, attention_mask=empty_attn)
             else:
                 output = model(inputs)
                 empty_output = model(empty_inputs)
@@ -112,5 +116,7 @@ def generate_rnd(prompts, m, model, empty_prompts):
         empty_past = empty_output.past_key_values
 
         attn = torch.cat([attn, attn.new_ones((attn.shape[0], 1))], dim=-1)
+        empty_attn = torch.cat(
+            [empty_attn, attn.new_ones((attn.shape[0], 1))], dim=-1)
 
     return inputs.detach().cpu(), sampling_probs.detach().cpu(), empty_sampling_probs.detach().cpu()
