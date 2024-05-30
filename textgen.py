@@ -2,7 +2,7 @@ from time import time
 
 import torch
 
-from transformers import AutoTokenizer, AutoModelForCausalLM, LogitsProcessorList
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import MarianMTModel, MarianTokenizer
 
 from datasets import load_dataset
@@ -22,8 +22,6 @@ from watermarking.transform.key import transform_key_func
 
 from watermarking.gumbel.sampler import gumbel_sampling
 from watermarking.gumbel.key import gumbel_key_func
-
-from watermarking.kirchenbauer.watermark_processor import WatermarkLogitsProcessor, WatermarkDetector
 
 import argparse
 
@@ -52,7 +50,6 @@ parser.add_argument('--max_seed', default=100000, type=int)
 parser.add_argument('--offset', action='store_true')
 
 parser.add_argument('--gamma', default=0.4, type=float)
-parser.add_argument('--nowatermark', action='store_true')
 
 # comma separated values
 parser.add_argument('--substitution_blocks_start', default="0", type=str)
@@ -152,7 +149,7 @@ if args.rt_translate:
 # for now each generation gets its own key
 seeds = torch.randint(2**32, (T,))
 seeds_save = open(args.save + args.model.replace("/", ".") +
-                  args.method + '-seeds.txt', 'w')
+                  args.method + '-seeds.csv', 'w')
 seeds_writer = csv.writer(seeds_save, delimiter=",")
 seeds_writer.writerow(np.asarray(seeds.squeeze().numpy()))
 seeds_save.close()
@@ -222,10 +219,10 @@ for batch in range(n_batches):
 
     null_sample, null_prob = generate_rnd(prompts[idx], new_tokens+buffer_tokens, model)
     null_samples.append(null_sample[:, prompt_tokens:])
-    null_probs.append(null_prob)
+    null_probs.append(null_prob[:, buffer_tokens:])
     watermarked_sample, watermarked_prob = generate_watermark(prompts[idx], seeds[idx])
     watermarked_samples.append(watermarked_sample[:, prompt_tokens:])
-    watermarked_probs.append(watermarked_prob[:, prompt_tokens:])
+    watermarked_probs.append(watermarked_prob[:, buffer_tokens:])
     pbar.update(1)
 pbar.close()
 null_samples = torch.vstack(null_samples)
@@ -238,10 +235,6 @@ results['null']['tokens'] = copy.deepcopy(null_samples)
 
 null_samples = torch.clip(null_samples, max=eff_vocab_size-1)
 watermarked_samples = torch.clip(watermarked_samples, max=eff_vocab_size-1)
-
-if args.nowatermark:
-    watermarked_samples = null_samples
-    watermarked_probs = null_probs
 
 print(f'Generated samples in (t = {time()-t1} seconds)')
 
@@ -260,7 +253,25 @@ for tokens, probs in zip(watermarked_samples, watermarked_probs):
     pbar.update(1)
 pbar.close()
 tokens_before_attack_save.close()
+probs_save.close()
 print(f'Saved text/tokens before attack and probs in (t = {time()-t1} seconds)')
+
+t1 = time()
+null_tokens_save = open(args.save + args.model.replace("/", ".") +
+                 args.method + '-null.csv', 'w')
+null_probs_save = open(args.save + args.model.replace("/", ".") +
+                    args.method + '-null-probs.csv', 'w')
+null_tokens_writer = csv.writer(null_tokens_save, delimiter=",")
+null_probs_writer = csv.writer(null_probs_save, delimiter=",")
+pbar = tqdm(total=len(null_samples))
+for tokens, probs in zip(null_samples, null_probs):
+    null_tokens_writer.writerow(np.asarray(tokens.numpy()))
+    null_probs_writer.writerow(np.asarray(probs.numpy()))
+    pbar.update(1)
+pbar.close()
+null_tokens_save.close()
+null_probs_save.close()
+print(f'Saved null samples and probs in (t = {time()-t1} seconds)')
 
 attacked_tokens_save = open(
     args.save + args.model.replace("/", ".") + args.method + "-attacked-tokens.csv", "w")
