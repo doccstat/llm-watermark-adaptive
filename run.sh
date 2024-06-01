@@ -98,4 +98,4 @@ END
 # jupyter-lab --no-browser --ip ${HOSTNAME} --port ${PORT}
 
 cd /home/anthony.li/llm-watermark-adaptive
-python detect.py --token_file "results/opt-gumbel-40-40.p" --n 1000 --model facebook/opt-1.3b --seed 1 --Tindex 1 --k 40 --method gumbel
+python detect.py --token_file "results/opt-gumbel-40-40.p" --n 40 --model facebook/opt-1.3b --seed 1 --Tindex 1 --k 40 --method gumbel
