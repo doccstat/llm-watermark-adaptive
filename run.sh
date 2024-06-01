@@ -18,7 +18,7 @@
 #SBATCH --time=1-00:00:00
 
 # Define the partition on which the job shall run.
-#SBATCH --partition=gpu
+#SBATCH --partition=medium
 
 # Define how much memory you need. Choose one of the following:
 # --mem will define memory per node and
