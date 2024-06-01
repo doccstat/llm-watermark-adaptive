@@ -98,4 +98,4 @@ END
 # jupyter-lab --no-browser --ip ${HOSTNAME} --port ${PORT}
 
 cd /home/anthony.li/llm-watermark-adaptive
-/home/anthony.li/.conda/envs/watermark/bin/parallel -j 500 --progress ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)
+/home/anthony.li/.conda/envs/watermark/bin/parallel -j 500 --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)
