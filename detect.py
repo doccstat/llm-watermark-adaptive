@@ -309,8 +309,8 @@ elif args.method == "gumbel":
     test_stats.append(test_stat5)
 
     def dist6(x, y): return ems_yes_adaptive_score(
-        x, y, genfromtxt(args.token_file + '-probs.csv',
-                         delimiter=',')[Tindex, :]
+        x, y, torch.from_numpy(genfromtxt(args.token_file + '-probs.csv',
+                                          delimiter=',')[Tindex, :])
     )
 
     def test_stat6(tokens, n, k, generator, vocab_size, null=False): return phi(
@@ -327,8 +327,8 @@ elif args.method == "gumbel":
     test_stats.append(test_stat6)
 
     def dist7(x, y): return ems_yes_adaptive_score(
-        x, y, genfromtxt(args.token_file + '-empty-probs.csv',
-                         delimiter=',')[Tindex, :]
+        x, y, torch.from_numpy(genfromtxt(args.token_file + '-empty-probs.csv',
+                                          delimiter=',')[Tindex, :])
     )
 
     def test_stat7(tokens, n, k, generator, vocab_size, null=False): return phi(
@@ -345,8 +345,8 @@ elif args.method == "gumbel":
     test_stats.append(test_stat7)
 
     def dist8(x, y): return ems_yes_adaptive_score(
-        x, y, genfromtxt(args.token_file + '-null-probs.csv',
-                         delimiter=',')[Tindex, :]
+        x, y, torch.from_numpy(genfromtxt(args.token_file + '-null-probs.csv',
+                                          delimiter=',')[Tindex, :])
     )
 
     def test_stat8(tokens, n, k, generator, vocab_size, null=False): return phi(
@@ -363,8 +363,8 @@ elif args.method == "gumbel":
     test_stats.append(test_stat8)
 
     def dist9(x, y): return ems_yes_adaptive_score(
-        x, y, genfromtxt(args.token_file + '-null-empty-probs.csv',
-                         delimiter=',')[Tindex, :]
+        x, y, torch.from_numpy(genfromtxt(args.token_file + '-null-empty-probs.csv',
+                                          delimiter=',')[Tindex, :])
     )
 
     def test_stat9(tokens, n, k, generator, vocab_size, null=False): return phi(
