@@ -5,10 +5,10 @@
 
 # Define how many nodes this job needs.
 # This example uses one 1 node.  Recall that each node has 128 CPU cores.
-#SBATCH --nodes=1
+#SBATCH --nodes=4
 
-#SBATCH --ntasks=1
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks=500
+#SBATCH --ntasks-per-node=125
 #SBATCH --cpus-per-task=1
 
 # Define a maximum amount of time the job will run in real time. This is a hard
@@ -24,7 +24,7 @@
 # --mem will define memory per node and
 # --mem-per-cpu will define memory per CPU/core.
 ##SBATCH --mem-per-cpu=1024MB
-#SBATCH --mem=10GB        # The double hash means that this one is not in effect
+#SBATCH --mem=500GB        # The double hash means that this one is not in effect
 
 # Define any general resources required by this job.  In this example 1 "a30"
 # GPU is requested per node.  Note that gpu:1 would request any gpu type, if
@@ -98,4 +98,4 @@ END
 # jupyter-lab --no-browser --ip ${HOSTNAME} --port ${PORT}
 
 cd /home/anthony.li/llm-watermark-adaptive
-python detect.py --token_file "results/opt-gumbel-40-40.p" --n 40 --model facebook/opt-1.3b --seed 1 --Tindex 1 --k 40 --method gumbel
+/home/anthony.li/.conda/envs/watermark/bin/parallel -j 500 --progress ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)

@@ -168,3 +168,5 @@ watermarking/transform/transform_levenshtein.c
 results/*.p
 results/*.csv
 results/*.txt
+results/gpt-gumbel-40-40.p-detect/
+results/opt-gumbel-40-40.p-detect/
