@@ -412,46 +412,46 @@ if args.method == "transform":
                           str(args.Tindex) + '-itsl.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
 elif args.method == "gumbel":
-    csv_saves.append(open(args.token_file + '/watermarked-' +
+    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
                      str(args.Tindex) + '-gumbel-edit.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/watermarked-' +
+    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
                      str(args.Tindex) + '-gumbel.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/watermarked-' +
+    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
                      str(args.Tindex) + '-ems.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/watermarked-' +
+    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
                      str(args.Tindex) + '-emsl.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/watermarked-' +
+    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
                      str(args.Tindex) + '-ems-not-adaptive.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/watermarked-' +
+    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
                      str(args.Tindex) + '-ems-yes-adaptive.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/watermarked-' +
+    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
                      str(args.Tindex) + '-ems-yes-adaptive-empty.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/null-' +
+    csv_saves.append(open(args.token_file + '-detect/null-' +
                      str(args.Tindex) + '-gumbel-edit.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/null-' +
+    csv_saves.append(open(args.token_file + '-detect/null-' +
                      str(args.Tindex) + '-gumbel.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/null-' +
+    csv_saves.append(open(args.token_file + '-detect/null-' +
                      str(args.Tindex) + '-ems.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/null-' +
+    csv_saves.append(open(args.token_file + '-detect/null-' +
                      str(args.Tindex) + '-emsl.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/null-' +
+    csv_saves.append(open(args.token_file + '-detect/null-' +
                      str(args.Tindex) + '-ems-not-adaptive.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/null-' +
+    csv_saves.append(open(args.token_file + '-detect/null-' +
                      str(args.Tindex) + '-ems-yes-adaptive.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/null-' +
+    csv_saves.append(open(args.token_file + '-detect/null-' +
                      str(args.Tindex) + '-ems-yes-adaptive-empty.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
 else:
