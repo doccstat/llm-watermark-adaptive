@@ -386,12 +386,12 @@ else:
 ds_iterator = iter(dataset)
 
 
-def test(tokens, seed, slices): return permutation_test(tokens,
-                                                        vocab_size,
-                                                        n,
-                                                        k,
-                                                        seed,
-                                                        test_stats[slices])
+def test(tokens, seed, test_stats): return permutation_test(tokens,
+                                                            vocab_size,
+                                                            n,
+                                                            k,
+                                                            seed,
+                                                            test_stats)
 
 
 t1 = time.time()
@@ -460,8 +460,9 @@ else:
 watermarked_sample = watermarked_samples[Tindex, :]
 null_sample = null_samples[Tindex, :]
 watermarked_pval = test(watermarked_sample, seeds[Tindex], [
-                        0, 1, 2, 3, 4, 5, 6])
-null_pval = test(null_sample, seeds[Tindex], [0, 1, 2, 3, 4, 7, 8])
+                        test_stats[i] for i in [0, 1, 2, 3, 4, 5, 6]])
+null_pval = test(null_sample, seeds[Tindex], [
+                 test_stats[i] for i in [0, 1, 2, 3, 4, 7, 8]])
 for distance_index in range(len(watermarked_pval)):
     csvWriters[distance_index].writerow(
         np.asarray(watermarked_pval[distance_index, ]))
