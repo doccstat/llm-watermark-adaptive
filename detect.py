@@ -60,6 +60,10 @@ parser.add_argument('--truncate_vocab', default=8, type=int)
 args = parser.parse_args()
 results['args'] = copy.deepcopy(args)
 
+log_file = open('log/' + str(args.Tindex) + '.log', 'w')
+log_file.write(str(args) + '\n')
+log_file.flush()
+
 t0 = time.time()
 
 if args.model == "facebook/opt-1.3b":
@@ -73,7 +77,8 @@ else:
     print(model.get_output_embeddings().weight.shape[0])
     raise
 eff_vocab_size = vocab_size - args.truncate_vocab
-print(f'Loaded the model (t = {time.time()-t0} seconds)')
+log_file.write(f'Loaded the model (t = {time.time()-t0} seconds)\n')
+log_file.flush()
 
 while True:
     try:
@@ -114,10 +119,12 @@ def permutation_test(
     p_val = 0
     null_results = []
     t0 = time.time()
-    print(f'Begin {n_runs} permutation tests')
+    log_file.write(f'Begin {n_runs} permutation tests\n')
+    log_file.flush()
     for run in range(n_runs):
         if run % 100 == 0:
-            print(f'Run {run} (t = {time.time()-t0} seconds)')
+            log_file.write(f'Run {run} (t = {time.time()-t0} seconds)\n')
+            log_file.flush()
         null_results.append([])
 
         seed = torch.randint(high=max_seed, size=(1,)).item()
@@ -166,6 +173,8 @@ watermarked_samples = genfromtxt(
     args.token_file + '-tokens-before-attack.csv', delimiter=",")
 null_samples = genfromtxt(args.token_file + '-null.csv', delimiter=",")
 Tindex = min(args.Tindex, watermarked_samples.shape[0])
+log_file.write(f'Loaded the samples (t = {time.time()-t0} seconds)\n')
+log_file.flush()
 
 
 if args.method == "transform":
@@ -459,11 +468,13 @@ null_sample = null_samples[Tindex, :]
 t0 = time.time()
 watermarked_pval = test(watermarked_sample, seeds[Tindex], [
                         test_stats[i] for i in [0, 1, 2, 3, 4, 5, 6]])
-print(f'Ran watermarked test in (t = {time.time()-t0} seconds)')
+log_file.write(f'Ran watermarked test in (t = {time.time()-t0} seconds)\n')
+log_file.flush()
 t0 = time.time()
 null_pval = test(null_sample, seeds[Tindex], [
                  test_stats[i] for i in [0, 1, 2, 3, 4, 7, 8]])
-print(f'Ran null test in (t = {time.time()-t0} seconds)')
+log_file.write(f'Ran null test in (t = {time.time()-t0} seconds)\n')
+log_file.flush()
 for distance_index in range(len(watermarked_pval)):
     csvWriters[distance_index].writerow(
         np.asarray(watermarked_pval[distance_index, ]))
@@ -472,9 +483,9 @@ for distance_index in range(len(null_pval)):
     csvWriters[distance_index + len(watermarked_pval)
                ].writerow(np.asarray(null_pval[distance_index, ]))
     csv_saves[distance_index + len(watermarked_pval)].flush()
-
-print(args.token_file + '/' + str(args.Tindex) + ' done')
-print(f'Ran the experiment (t = {time.time()-t1} seconds)')
+log_file.write(args.token_file + '/' + str(args.Tindex) + ' done')
+log_file.write(f'Ran the experiment (t = {time.time()-t1} seconds)\n')
+log_file.close()
 
 for csv_save in csv_saves:
     csv_save.close()
