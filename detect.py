@@ -86,7 +86,7 @@ buffer_tokens = args.buffer_tokens
 k = args.k
 n = args.n     # watermark key length
 
-seeds = np.genfromtxt(args.token_file + '-seeds.txt',
+seeds = np.genfromtxt(args.token_file + '-seeds.csv',
                       delimiter=',', max_rows=1)
 
 ################################################################################
@@ -309,7 +309,7 @@ elif args.method == "gumbel":
     test_stats.append(test_stat5)
 
     def dist6(x, y): return ems_yes_adaptive_score(
-        x, y, genfromtxt(args.token_file + '-probs.txt',
+        x, y, genfromtxt(args.token_file + '-probs.csv',
                          delimiter=',')[Tindex, :]
     )
 
@@ -327,7 +327,7 @@ elif args.method == "gumbel":
     test_stats.append(test_stat6)
 
     def dist7(x, y): return ems_yes_adaptive_score(
-        x, y, genfromtxt(args.token_file + '-empty-probs.txt',
+        x, y, genfromtxt(args.token_file + '-empty-probs.csv',
                          delimiter=',')[Tindex, :]
     )
 
@@ -345,7 +345,7 @@ elif args.method == "gumbel":
     test_stats.append(test_stat7)
 
     def dist8(x, y): return ems_yes_adaptive_score(
-        x, y, genfromtxt(args.token_file + '-null-probs.txt',
+        x, y, genfromtxt(args.token_file + '-null-probs.csv',
                          delimiter=',')[Tindex, :]
     )
 
@@ -363,7 +363,7 @@ elif args.method == "gumbel":
     test_stats.append(test_stat8)
 
     def dist9(x, y): return ems_yes_adaptive_score(
-        x, y, genfromtxt(args.token_file + '-null-empty-probs.txt',
+        x, y, genfromtxt(args.token_file + '-null-empty-probs.csv',
                          delimiter=',')[Tindex, :]
     )
 
