@@ -8,6 +8,8 @@ import copy
 import numpy as np
 from numpy import genfromtxt
 
+from watermarking.detection import adjacency
+
 from watermarking.transform.score import transform_score, transform_edit_score
 from watermarking.transform.score import its_score, itsl_score
 from watermarking.transform.key import transform_key_func
@@ -37,7 +39,7 @@ parser.add_argument('--Tindex', default=1, type=int)
 
 parser.add_argument('--prompt_tokens', default=50, type=int)
 parser.add_argument('--buffer_tokens', default=20, type=int)
-parser.add_argument('--n_runs', default=5000, type=int)
+parser.add_argument('--n_runs', default=999, type=int)
 parser.add_argument('--max_seed', default=100000, type=int)
 parser.add_argument('--offset', action='store_true')
 
@@ -111,7 +113,11 @@ def permutation_test(
     test_results = np.array(test_results)
     p_val = 0
     null_results = []
+    t0 = time.time()
+    print(f'Begin {n_runs} permutation tests')
     for run in range(n_runs):
+        if run % 100 == 0:
+            print(f'Run {run} (t = {time.time()-t0} seconds)')
         null_results.append([])
 
         seed = torch.randint(high=max_seed, size=(1,)).item()
@@ -152,17 +158,6 @@ def phi(
 
     return torch.min(closest)
 
-
-def adjacency(tokens, xi, dist, k):
-    m = len(tokens)
-    n = len(xi)
-
-    A = torch.empty(size=(m-(k-1), n))
-    for i in range(m-(k-1)):
-        for j in range(n):
-            A[i][j] = dist(tokens[i:i+k], xi[(j+torch.arange(k)) % n])
-
-    return A
 
 ################################################################################
 
@@ -391,7 +386,8 @@ def test(tokens, seed, test_stats): return permutation_test(tokens,
                                                             n,
                                                             k,
                                                             seed,
-                                                            test_stats)
+                                                            test_stats,
+                                                            n_runs=args.n_runs)
 
 
 t1 = time.time()
@@ -459,10 +455,15 @@ else:
 
 watermarked_sample = watermarked_samples[Tindex, :]
 null_sample = null_samples[Tindex, :]
+
+t0 = time.time()
 watermarked_pval = test(watermarked_sample, seeds[Tindex], [
                         test_stats[i] for i in [0, 1, 2, 3, 4, 5, 6]])
+print(f'Ran watermarked test in (t = {time.time()-t0} seconds)')
+t0 = time.time()
 null_pval = test(null_sample, seeds[Tindex], [
                  test_stats[i] for i in [0, 1, 2, 3, 4, 7, 8]])
+print(f'Ran null test in (t = {time.time()-t0} seconds)')
 for distance_index in range(len(watermarked_pval)):
     csvWriters[distance_index].writerow(
         np.asarray(watermarked_pval[distance_index, ]))

@@ -1,6 +1,7 @@
 import torch
 import scipy
 import numpy as np
+import time
 
 
 def sliding_permutation_test(
@@ -34,7 +35,11 @@ def permutation_test(
     test_results = np.array(test_results)
     p_val = 0
     null_results = []
+    t0 = time.time()
+    print(f'Begin {n_runs} permutation tests')
     for run in range(n_runs):
+        if run % 100 == 0:
+            print(f'Run {run} (t = {time.time()-t0} seconds)')
         null_results.append([])
 
         seed = torch.randint(high=max_seed, size=(1,)).item()
