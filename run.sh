@@ -18,7 +18,7 @@
 #SBATCH --time=1-00:00:00
 
 # Define the partition on which the job shall run.
-#SBATCH --partition=medium
+#SBATCH --partition=gpu
 
 # Define how much memory you need. Choose one of the following:
 # --mem will define memory per node and
@@ -29,7 +29,7 @@
 # Define any general resources required by this job.  In this example 1 "a30"
 # GPU is requested per node.  Note that gpu:1 would request any gpu type, if
 # available.  This cluster currenlty only contains NVIDIA A30 GPUs.
-##SBATCH --gres=gpu:a30:1
+#SBATCH --gres=gpu:a30:1
 
 # Define the destination file name(s) for this batch scripts output.
 # The use of '%j' here uses the job ID as part of the filename.
@@ -98,6 +98,17 @@ END
 # jupyter-lab --no-browser --ip ${HOSTNAME} --port ${PORT}
 
 cd /home/anthony.li/llm-watermark-adaptive
-/home/anthony.li/.conda/envs/watermark/bin/parallel --sshloginfile <(echo $expanded_nodes | sed 's/,$//') -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 10) < /dev/null
+
+export PYTHONPATH=".":$PYTHONPATH
+
+for method in gumbel; do
+  python textgen.py --save results/opt-$method-20-20.p --n 20 --batch_size 25 --m 20 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method
+done
+
+for method in gumbel; do
+  python textgen.py --save results/gpt-$method-20-20.p --n 20 --batch_size 25 --m 20 --model openai-community/gpt2 --seed 1 --T 1000 --method $method
+done
+
+# /home/anthony.li/.conda/envs/watermark/bin/parallel --sshloginfile <(echo $expanded_nodes | sed 's/,$//') -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 10) < /dev/null
 # /home/anthony.li/.conda/envs/watermark/bin/parallel --slf $SLURM_JOB_NODELIST -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500) < /dev/null
 # /home/anthony.li/.conda/envs/watermark/bin/parallel -j 500 --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500) < /dev/null
