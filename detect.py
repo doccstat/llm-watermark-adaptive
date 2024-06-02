@@ -241,62 +241,62 @@ if args.method == "transform":
 
 elif args.method == "gumbel":
     test_stats = []
-    def dist1(x, y): return gumbel_edit_score(x, y, gamma=args.gamma)
+    # def dist1(x, y): return gumbel_edit_score(x, y, gamma=args.gamma)
 
-    def test_stat1(tokens, n, k, generator, vocab_size, null=False): return phi(
-        tokens=tokens,
-        n=n,
-        k=k,
-        generator=generator,
-        key_func=gumbel_key_func,
-        vocab_size=vocab_size,
-        dist=dist1,
-        null=null,
-        normalize=False
-    )
-    test_stats.append(test_stat1)
-    def dist2(x, y): return gumbel_score(x, y)
+    # def test_stat1(tokens, n, k, generator, vocab_size, null=False): return phi(
+    #     tokens=tokens,
+    #     n=n,
+    #     k=k,
+    #     generator=generator,
+    #     key_func=gumbel_key_func,
+    #     vocab_size=vocab_size,
+    #     dist=dist1,
+    #     null=null,
+    #     normalize=False
+    # )
+    # test_stats.append(test_stat1)
+    # def dist2(x, y): return gumbel_score(x, y)
 
-    def test_stat2(tokens, n, k, generator, vocab_size, null=False): return phi(
-        tokens=tokens,
-        n=n,
-        k=k,
-        generator=generator,
-        key_func=gumbel_key_func,
-        vocab_size=vocab_size,
-        dist=dist2,
-        null=null,
-        normalize=False
-    )
-    test_stats.append(test_stat2)
-    def dist3(x, y): return ems_score(x, y)
+    # def test_stat2(tokens, n, k, generator, vocab_size, null=False): return phi(
+    #     tokens=tokens,
+    #     n=n,
+    #     k=k,
+    #     generator=generator,
+    #     key_func=gumbel_key_func,
+    #     vocab_size=vocab_size,
+    #     dist=dist2,
+    #     null=null,
+    #     normalize=False
+    # )
+    # test_stats.append(test_stat2)
+    # def dist3(x, y): return ems_score(x, y)
 
-    def test_stat3(tokens, n, k, generator, vocab_size, null=False): return phi(
-        tokens=tokens,
-        n=n,
-        k=k,
-        generator=generator,
-        key_func=gumbel_key_func,
-        vocab_size=vocab_size,
-        dist=dist3,
-        null=null,
-        normalize=False
-    )
-    test_stats.append(test_stat3)
-    def dist4(x, y): return emsl_score(x, y, gamma=args.gamma)
+    # def test_stat3(tokens, n, k, generator, vocab_size, null=False): return phi(
+    #     tokens=tokens,
+    #     n=n,
+    #     k=k,
+    #     generator=generator,
+    #     key_func=gumbel_key_func,
+    #     vocab_size=vocab_size,
+    #     dist=dist3,
+    #     null=null,
+    #     normalize=False
+    # )
+    # test_stats.append(test_stat3)
+    # def dist4(x, y): return emsl_score(x, y, gamma=args.gamma)
 
-    def test_stat4(tokens, n, k, generator, vocab_size, null=False): return phi(
-        tokens=tokens,
-        n=n,
-        k=k,
-        generator=generator,
-        key_func=gumbel_key_func,
-        vocab_size=vocab_size,
-        dist=dist4,
-        null=null,
-        normalize=False
-    )
-    test_stats.append(test_stat4)
+    # def test_stat4(tokens, n, k, generator, vocab_size, null=False): return phi(
+    #     tokens=tokens,
+    #     n=n,
+    #     k=k,
+    #     generator=generator,
+    #     key_func=gumbel_key_func,
+    #     vocab_size=vocab_size,
+    #     dist=dist4,
+    #     null=null,
+    #     normalize=False
+    # )
+    # test_stats.append(test_stat4)
     def dist5(x, y): return ems_not_adaptive_score(x, y)
 
     def test_stat5(tokens, n, k, generator, vocab_size, null=False): return phi(
@@ -417,18 +417,18 @@ if args.method == "transform":
                           str(args.Tindex) + '-itsl.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
 elif args.method == "gumbel":
-    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
-                     str(args.Tindex) + '-gumbel-edit.csv', 'w'))
-    csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
-                     str(args.Tindex) + '-gumbel.csv', 'w'))
-    csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
-                     str(args.Tindex) + '-ems.csv', 'w'))
-    csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
-                     str(args.Tindex) + '-emsl.csv', 'w'))
-    csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
+    # csv_saves.append(open(args.token_file + '-detect/watermarked-' +
+    #                  str(args.Tindex) + '-gumbel-edit.csv', 'w'))
+    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
+    # csv_saves.append(open(args.token_file + '-detect/watermarked-' +
+    #                  str(args.Tindex) + '-gumbel.csv', 'w'))
+    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
+    # csv_saves.append(open(args.token_file + '-detect/watermarked-' +
+    #                  str(args.Tindex) + '-ems.csv', 'w'))
+    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
+    # csv_saves.append(open(args.token_file + '-detect/watermarked-' +
+    #                  str(args.Tindex) + '-emsl.csv', 'w'))
+    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
     csv_saves.append(open(args.token_file + '-detect/watermarked-' +
                      str(args.Tindex) + '-ems-not-adaptive.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
@@ -467,12 +467,12 @@ null_sample = null_samples[Tindex, :]
 
 t0 = time.time()
 watermarked_pval = test(watermarked_sample, seeds[Tindex], [
-                        test_stats[i] for i in [0, 1, 2, 3, 4, 5, 6]])
+                        test_stats[i] for i in [0, 1, 2]])
 log_file.write(f'Ran watermarked test in (t = {time.time()-t0} seconds)\n')
 log_file.flush()
 t0 = time.time()
 null_pval = test(null_sample, seeds[Tindex], [
-                 test_stats[i] for i in [0, 1, 2, 3, 4, 7, 8]])
+                 test_stats[i] for i in [0, 3, 4,]])
 log_file.write(f'Ran null test in (t = {time.time()-t0} seconds)\n')
 log_file.flush()
 for distance_index in range(len(watermarked_pval)):
