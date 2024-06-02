@@ -99,6 +99,16 @@ END
 
 cd /home/anthony.li/llm-watermark-adaptive
 
-/home/anthony.li/.conda/envs/watermark/bin/parallel --sshloginfile <(echo $expanded_nodes | sed 's/,$//') -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 10)
+export PYTHONPATH=".":$PYTHONPATH
+
+for method in gumbel; do
+  python textgen.py --save results/opt-$method-10-10.p --n 10 --batch_size 25 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method
+done
+
+for method in gumbel; do
+  python textgen.py --save results/gpt-$method-10-10.p --n 10 --batch_size 25 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method
+done
+
+# /home/anthony.li/.conda/envs/watermark/bin/parallel --sshloginfile <(echo $expanded_nodes | sed 's/,$//') -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 10)
 # /home/anthony.li/.conda/envs/watermark/bin/parallel --slf $SLURM_JOB_NODELIST -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)
 # /home/anthony.li/.conda/envs/watermark/bin/parallel -j 500 --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)
