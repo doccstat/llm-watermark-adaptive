@@ -5,10 +5,10 @@
 
 # Define how many nodes this job needs.
 # This example uses one 1 node.  Recall that each node has 128 CPU cores.
-#SBATCH --nodes=4
+#SBATCH --nodes=1
 
-#SBATCH --ntasks=500
-#SBATCH --ntasks-per-node=125
+#SBATCH --ntasks=10
+#SBATCH --ntasks-per-node=10
 #SBATCH --cpus-per-task=1
 
 # Define a maximum amount of time the job will run in real time. This is a hard
@@ -24,7 +24,7 @@
 # --mem will define memory per node and
 # --mem-per-cpu will define memory per CPU/core.
 ##SBATCH --mem-per-cpu=1024MB
-#SBATCH --mem=500GB        # The double hash means that this one is not in effect
+#SBATCH --mem=100GB        # The double hash means that this one is not in effect
 
 # Define any general resources required by this job.  In this example 1 "a30"
 # GPU is requested per node.  Note that gpu:1 would request any gpu type, if
@@ -98,6 +98,6 @@ END
 # jupyter-lab --no-browser --ip ${HOSTNAME} --port ${PORT}
 
 cd /home/anthony.li/llm-watermark-adaptive
-/home/anthony.li/.conda/envs/watermark/bin/parallel --sshloginfile <(echo $expanded_nodes | sed 's/,$//') -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)
+/home/anthony.li/.conda/envs/watermark/bin/parallel --sshloginfile <(echo $expanded_nodes | sed 's/,$//') -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 10)
 # /home/anthony.li/.conda/envs/watermark/bin/parallel --slf $SLURM_JOB_NODELIST -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)
 # /home/anthony.li/.conda/envs/watermark/bin/parallel -j 500 --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)
