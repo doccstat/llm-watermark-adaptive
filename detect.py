@@ -470,19 +470,19 @@ watermarked_pval = test(watermarked_sample, seeds[Tindex], [
                         test_stats[i] for i in [0, 1, 2]])
 log_file.write(f'Ran watermarked test in (t = {time.time()-t0} seconds)\n')
 log_file.flush()
-t0 = time.time()
-null_pval = test(null_sample, seeds[Tindex], [
-                 test_stats[i] for i in [0, 3, 4,]])
-log_file.write(f'Ran null test in (t = {time.time()-t0} seconds)\n')
-log_file.flush()
+# t0 = time.time()
+# null_pval = test(null_sample, seeds[Tindex], [
+#                  test_stats[i] for i in [0, 3, 4,]])
+# log_file.write(f'Ran null test in (t = {time.time()-t0} seconds)\n')
+# log_file.flush()
 for distance_index in range(len(watermarked_pval)):
     csvWriters[distance_index].writerow(
         np.asarray(watermarked_pval[distance_index, ]))
     csv_saves[distance_index].flush()
-for distance_index in range(len(null_pval)):
-    csvWriters[distance_index + len(watermarked_pval)
-               ].writerow(np.asarray(null_pval[distance_index, ]))
-    csv_saves[distance_index + len(watermarked_pval)].flush()
+# for distance_index in range(len(null_pval)):
+#     csvWriters[distance_index + len(watermarked_pval)
+#                ].writerow(np.asarray(null_pval[distance_index, ]))
+#     csv_saves[distance_index + len(watermarked_pval)].flush()
 log_file.write(args.token_file + '/' + str(args.Tindex) + ' done')
 log_file.write(f'Ran the experiment (t = {time.time()-t1} seconds)\n')
 log_file.close()
