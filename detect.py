@@ -430,13 +430,7 @@ elif args.method == "gumbel":
     #                  str(args.Tindex) + '-emsl.csv', 'w'))
     # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
     csv_saves.append(open(args.token_file + '-detect/watermarked-' +
-                     str(args.Tindex) + '-ems-not-adaptive.csv', 'w'))
-    csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
-                     str(args.Tindex) + '-ems-yes-adaptive.csv', 'w'))
-    csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '-detect/watermarked-' +
-                     str(args.Tindex) + '-ems-yes-adaptive-empty.csv', 'w'))
+                     str(args.Tindex) + '.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
     # csv_saves.append(open(args.token_file + '-detect/null-' +
     #                  str(args.Tindex) + '-gumbel-edit.csv', 'w'))
@@ -475,10 +469,8 @@ log_file.flush()
 #                  test_stats[i] for i in [0, 3, 4,]])
 # log_file.write(f'Ran null test in (t = {time.time()-t0} seconds)\n')
 # log_file.flush()
-for distance_index in range(len(watermarked_pval)):
-    csvWriters[distance_index].writerow(
-        np.asarray(watermarked_pval[distance_index, ]))
-    csv_saves[distance_index].flush()
+csvWriters[0].writerow(np.asarray(watermarked_pval))
+csv_saves[0].flush()
 # for distance_index in range(len(null_pval)):
 #     csvWriters[distance_index + len(watermarked_pval)
 #                ].writerow(np.asarray(null_pval[distance_index, ]))
