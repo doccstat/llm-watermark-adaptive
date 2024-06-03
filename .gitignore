@@ -165,8 +165,4 @@ watermarking/gumbel/ems_levenshtein.c
 watermarking/gumbel/gumbel_levenshtein.c
 watermarking/transform/its_levenshtein.c
 watermarking/transform/transform_levenshtein.c
-results/*.p
-results/*.csv
-results/*.txt
-results/gpt-gumbel-40-40.p-detect/
-results/opt-gumbel-40-40.p-detect/
+results/
