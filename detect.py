@@ -312,23 +312,23 @@ elif args.method == "gumbel":
     )
     test_stats.append(test_stat5)
 
-    def dist6(x, y): return ems_yes_adaptive_score(
-        x, y, torch.from_numpy(genfromtxt(args.token_file + '-probs.csv',
-                                          delimiter=',')[Tindex, :])
-    )
+    # def dist6(x, y): return ems_yes_adaptive_score(
+    #     x, y, torch.from_numpy(genfromtxt(args.token_file + '-probs.csv',
+    #                                       delimiter=',')[Tindex, :])
+    # )
 
-    def test_stat6(tokens, n, k, generator, vocab_size, null=False): return phi(
-        tokens=tokens,
-        n=n,
-        k=k,
-        generator=generator,
-        key_func=gumbel_key_func,
-        vocab_size=vocab_size,
-        dist=dist6,
-        null=null,
-        normalize=False
-    )
-    test_stats.append(test_stat6)
+    # def test_stat6(tokens, n, k, generator, vocab_size, null=False): return phi(
+    #     tokens=tokens,
+    #     n=n,
+    #     k=k,
+    #     generator=generator,
+    #     key_func=gumbel_key_func,
+    #     vocab_size=vocab_size,
+    #     dist=dist6,
+    #     null=null,
+    #     normalize=False
+    # )
+    # test_stats.append(test_stat6)
 
     def dist7(x, y): return ems_yes_adaptive_score(
         x, y, torch.from_numpy(genfromtxt(args.token_file + '-empty-probs.csv',
@@ -348,23 +348,23 @@ elif args.method == "gumbel":
     )
     test_stats.append(test_stat7)
 
-    def dist8(x, y): return ems_yes_adaptive_score(
-        x, y, torch.from_numpy(genfromtxt(args.token_file + '-null-probs.csv',
-                                          delimiter=',')[Tindex, :])
-    )
+    # def dist8(x, y): return ems_yes_adaptive_score(
+    #     x, y, torch.from_numpy(genfromtxt(args.token_file + '-null-probs.csv',
+    #                                       delimiter=',')[Tindex, :])
+    # )
 
-    def test_stat8(tokens, n, k, generator, vocab_size, null=False): return phi(
-        tokens=tokens,
-        n=n,
-        k=k,
-        generator=generator,
-        key_func=gumbel_key_func,
-        vocab_size=vocab_size,
-        dist=dist8,
-        null=null,
-        normalize=False
-    )
-    test_stats.append(test_stat8)
+    # def test_stat8(tokens, n, k, generator, vocab_size, null=False): return phi(
+    #     tokens=tokens,
+    #     n=n,
+    #     k=k,
+    #     generator=generator,
+    #     key_func=gumbel_key_func,
+    #     vocab_size=vocab_size,
+    #     dist=dist8,
+    #     null=null,
+    #     normalize=False
+    # )
+    # test_stats.append(test_stat8)
 
     def dist9(x, y): return ems_yes_adaptive_score(
         x, y, torch.from_numpy(genfromtxt(args.token_file + '-null-empty-probs.csv',
@@ -461,7 +461,7 @@ null_sample = null_samples[Tindex, :]
 
 t0 = time.time()
 watermarked_pval = test(watermarked_sample, seeds[Tindex], [
-                        test_stats[i] for i in [0, 1, 2]])
+                        test_stats[i] for i in [0, 1]])
 log_file.write(f'Ran watermarked test in (t = {time.time()-t0} seconds)\n')
 log_file.flush()
 # t0 = time.time()
