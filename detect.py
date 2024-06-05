@@ -466,7 +466,7 @@ log_file.write(f'Ran watermarked test in (t = {time.time()-t0} seconds)\n')
 log_file.flush()
 # t0 = time.time()
 # null_pval = test(null_sample, seeds[Tindex], [
-#                  test_stats[i] for i in [0, 3, 4,]])
+#                  test_stats[i] for i in [0, 2]])
 # log_file.write(f'Ran null test in (t = {time.time()-t0} seconds)\n')
 # log_file.flush()
 csvWriters[0].writerow(np.asarray(watermarked_pval))
