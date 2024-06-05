@@ -5,10 +5,10 @@
 
 # Define how many nodes this job needs.
 # This example uses one 1 node.  Recall that each node has 128 CPU cores.
-#SBATCH --nodes=4
+#SBATCH --nodes=1
 
-#SBATCH --ntasks=500
-#SBATCH --ntasks-per-node=125
+#SBATCH --ntasks=128
+#SBATCH --ntasks-per-node=128
 #SBATCH --cpus-per-task=1
 
 # Define a maximum amount of time the job will run in real time. This is a hard
@@ -18,18 +18,18 @@
 #SBATCH --time=1-00:00:00
 
 # Define the partition on which the job shall run.
-#SBATCH --partition=medium
+#SBATCH --partition=gpu
 
 # Define how much memory you need. Choose one of the following:
 # --mem will define memory per node and
 # --mem-per-cpu will define memory per CPU/core.
 ##SBATCH --mem-per-cpu=1024MB
-#SBATCH --mem=500GB        # The double hash means that this one is not in effect
+#SBATCH --mem=128GB        # The double hash means that this one is not in effect
 
 # Define any general resources required by this job.  In this example 1 "a30"
 # GPU is requested per node.  Note that gpu:1 would request any gpu type, if
 # available.  This cluster currenlty only contains NVIDIA A30 GPUs.
-##SBATCH --gres=gpu:a30:1
+#SBATCH --gres=gpu:a30:1
 
 # Define the destination file name(s) for this batch scripts output.
 # The use of '%j' here uses the job ID as part of the filename.
@@ -99,7 +99,25 @@ END
 
 cd /home/anthony.li/llm-watermark-adaptive
 
-expanded_nodes=$(scontrol show hostname $SLURM_JOB_NODELIST | tr '\n' ',')
-/home/anthony.li/.conda/envs/watermark/bin/parallel --sshloginfile <(echo $expanded_nodes | sed 's/,$//') -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 1000)
+export PYTHONPATH=".":$PYTHONPATH
+
+for method in gumbel; do
+  for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
+    python textgen.py --save results/opt-$method-deletion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --deletion $pcts
+    python textgen.py --save results/opt-$method-insertion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --insertion $pcts
+    python textgen.py --save results/opt-$method-substitution-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --substitution $pcts
+  done
+done
+
+for method in gumbel; do
+  for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
+    python textgen.py --save results/gpt-$method-deletion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --deletion $pcts
+    python textgen.py --save results/gpt-$method-insertion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --insertion $pcts
+    python textgen.py --save results/gpt-$method-substitution-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --substitution $pcts
+  done
+done
+
+# expanded_nodes=$(scontrol show hostname $SLURM_JOB_NODELIST | tr '\n' ',')
+# /home/anthony.li/.conda/envs/watermark/bin/parallel --sshloginfile <(echo $expanded_nodes | sed 's/,$//') -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 1000)
 # /home/anthony.li/.conda/envs/watermark/bin/parallel --slf $SLURM_JOB_NODELIST -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)
 # /home/anthony.li/.conda/envs/watermark/bin/parallel -j 500 --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)
