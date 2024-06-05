@@ -15,7 +15,7 @@ import copy
 import numpy as np
 
 from watermarking.generation import generate, generate_rnd
-from watermarking.attacks import insertion_block_attack, substitution_block_attack
+from watermarking.attacks import deletion_attack, insertion_attack, substitution_attack
 
 from watermarking.transform.sampler import transform_sampling
 from watermarking.transform.key import transform_key_func
@@ -51,11 +51,9 @@ parser.add_argument('--offset', action='store_true')
 
 parser.add_argument('--gamma', default=0.4, type=float)
 
-# comma separated values
-parser.add_argument('--substitution_blocks_start', default="0", type=str)
-parser.add_argument('--substitution_blocks_end', default="0", type=str)
-parser.add_argument('--insertion_blocks_start', default="0", type=str)
-parser.add_argument('--insertion_blocks_length', default="0", type=str)
+parser.add_argument('--deletion', default=0.0, type=float)
+parser.add_argument('--insertion', default=0.0, type=float)
+parser.add_argument('--substitution', default=0.0, type=float)
 
 parser.add_argument('--kirch_gamma', default=0.25, type=float)
 parser.add_argument('--kirch_delta', default=1.0, type=float)
@@ -85,10 +83,9 @@ dataset = load_dataset("allenai/c4", "realnewslike",
 
 
 def corrupt(tokens):
-    tokens = substitution_block_attack(tokens, list(map(int, args.substitution_blocks_start.split(
-        ','))), list(map(int, args.substitution_blocks_end.split(','))), eff_vocab_size)
-    tokens = insertion_block_attack(tokens, list(map(int, args.insertion_blocks_start.split(
-        ','))), list(map(int, args.insertion_blocks_length.split(','))), eff_vocab_size)
+    tokens = deletion_attack(tokens, args.deletion)
+    tokens = insertion_attack(tokens, args.insertion, eff_vocab_size)
+    tokens = substitution_attack(tokens, args.substitution, eff_vocab_size)
 
     return tokens
 
