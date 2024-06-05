@@ -29,7 +29,8 @@
 # Define any general resources required by this job.  In this example 1 "a30"
 # GPU is requested per node.  Note that gpu:1 would request any gpu type, if
 # available.  This cluster currenlty only contains NVIDIA A30 GPUs.
-#SBATCH --gres=gpu:a30:1
+##SBATCH --gres=gpu:a30:1
+#SBATCH --gres=gpu:1
 
 # Define the destination file name(s) for this batch scripts output.
 # The use of '%j' here uses the job ID as part of the filename.
