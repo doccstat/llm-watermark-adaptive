@@ -69,6 +69,7 @@ Less than 1 GB.
 
 ```shell
 mkdir -p results
+mkdir -p log
 
 export PYTHONPATH=".":$PYTHONPATH
 

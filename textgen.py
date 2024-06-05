@@ -66,6 +66,10 @@ parser.add_argument('--truncate_vocab', default=8, type=int)
 args = parser.parse_args()
 results['args'] = copy.deepcopy(args)
 
+log_file = open('log/textgen.log', 'w')
+log_file.write(str(args) + '\n')
+log_file.flush()
+
 # fix the random seed for reproducibility
 t0 = time()
 torch.manual_seed(args.seed)
@@ -76,7 +80,8 @@ model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
 
 vocab_size = model.get_output_embeddings().weight.shape[0]
 eff_vocab_size = vocab_size - args.truncate_vocab
-print(f'Loaded the model (t = {time()-t0} seconds)')
+log_file.write(f'Loaded the model (t = {time()-t0} seconds)\n')
+log_file.flush()
 
 dataset = load_dataset("allenai/c4", "realnewslike",
                        split="train", streaming=True)
@@ -272,7 +277,8 @@ results['null']['tokens'] = copy.deepcopy(null_samples)
 null_samples = torch.clip(null_samples, max=eff_vocab_size-1)
 watermarked_samples = torch.clip(watermarked_samples, max=eff_vocab_size-1)
 
-print(f'Generated samples in (t = {time()-t1} seconds)')
+log_file.write(f'Generated samples in (t = {time()-t1} seconds)\n')
+log_file.flush()
 
 t1 = time()
 tokens_before_attack_save = open(args.save + '-tokens-before-attack.csv', "w")
@@ -292,8 +298,9 @@ pbar.close()
 tokens_before_attack_save.close()
 probs_save.close()
 empty_probs_save.close()
-print(
-    f'Saved text/tokens before attack and probs in (t = {time()-t1} seconds)')
+log_file.write(
+    f'Saved text/tokens before attack and probs in (t = {time()-t1} seconds)\n')
+log_file.flush()
 
 t1 = time()
 null_tokens_save = open(args.save + '-null.csv', 'w')
@@ -312,7 +319,9 @@ pbar.close()
 null_tokens_save.close()
 null_probs_save.close()
 null_empty_probs_save.close()
-print(f'Saved null samples and probs in (t = {time()-t1} seconds)')
+log_file.write(
+    f'Saved null samples and probs in (t = {time()-t1} seconds)\n')
+log_file.flush()
 
 attacked_tokens_save = open(
     args.save + "-attacked-tokens.csv", "w")
@@ -357,7 +366,9 @@ for itm in range(T):
     pbar.update(1)
 
 pbar.close()
-print(f'Ran the experiment (t = {time()-t1} seconds)')
+log_file.write(f'Attacked the samples in (t = {time()-t1} seconds)\n')
+log_file.flush()
+log_file.close()
 attacked_tokens_save.close()
 
 pickle.dump(results, open(args.save, "wb"))
