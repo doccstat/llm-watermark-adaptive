@@ -125,3 +125,5 @@ done
 # /home/anthony.li/.conda/envs/watermark/bin/parallel --sshloginfile <(echo $expanded_nodes | sed 's/,$//') -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 1000)
 # /home/anthony.li/.conda/envs/watermark/bin/parallel --slf $SLURM_JOB_NODELIST -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)
 # /home/anthony.li/.conda/envs/watermark/bin/parallel -j 500 --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)
+
+# srun --partition=gpu --nodes=1 --mem=128G --time=01:00:00 --ntasks=128 --ntasks-per-node=128 --cpus-per-task=1 --gres=gpu:1 --pty bash -i
