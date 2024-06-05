@@ -8,7 +8,7 @@ import copy
 import numpy as np
 from numpy import genfromtxt
 
-from watermarking.detection import adjacency
+from watermarking.detection import permutation_test, phi
 
 from watermarking.transform.score import transform_score, transform_edit_score
 from watermarking.transform.score import its_score, itsl_score
@@ -43,7 +43,6 @@ parser.add_argument('--offset', action='store_true')
 
 parser.add_argument('--norm', default=1, type=int)
 parser.add_argument('--gamma', default=0.4, type=float)
-# parser.add_argument('--edit', action='store_true')
 parser.add_argument('--nowatermark', action='store_true')
 
 parser.add_argument('--deletion', default=0.0, type=float)
@@ -93,79 +92,6 @@ n = args.n     # watermark key length
 
 seeds = np.genfromtxt(args.token_file + '-seeds.csv',
                       delimiter=',', max_rows=1)
-
-################################################################################
-
-
-def permutation_test(
-    tokens, vocab_size, n, k, seed, test_stats, n_runs=100, max_seed=100000
-):
-    generator = torch.Generator()
-
-    test_results = []
-
-    for test_stat in test_stats:
-        generator.manual_seed(int(seed))
-        test_result = test_stat(tokens=tokens,
-                                n=n,
-                                k=k,
-                                generator=generator,
-                                vocab_size=vocab_size)
-        test_results.append(test_result)
-
-    test_results = np.array(test_results)
-    p_val = 0
-    null_results = []
-    t0 = time.time()
-    log_file.write(f'Begin {n_runs} permutation tests\n')
-    log_file.flush()
-    for run in range(n_runs):
-        if run % 100 == 0:
-            log_file.write(f'Run {run} (t = {time.time()-t0} seconds)\n')
-            log_file.flush()
-        null_results.append([])
-
-        seed = torch.randint(high=max_seed, size=(1,)).item()
-        for test_stat in test_stats:
-            generator.manual_seed(int(seed))
-            null_result = test_stat(tokens=tokens,
-                                    n=n,
-                                    k=k,
-                                    generator=generator,
-                                    vocab_size=vocab_size,
-                                    null=True)
-            null_results[-1].append(null_result)
-        # assuming lower test values indicate presence of watermark
-        p_val += (null_result <= test_result).float()
-    null_results = np.array(null_results)
-
-    return (np.sum(null_results <= test_results, axis=0) + 1.0) / (n_runs + 1.0)
-
-
-def phi(
-        tokens, n, k, generator, key_func, vocab_size, dist,
-        null=False, normalize=False
-):
-    if null:
-        tokens = torch.unique(torch.asarray(
-            tokens), return_inverse=True, sorted=False)[1]
-        eff_vocab_size = torch.max(tokens) + 1
-    else:
-        eff_vocab_size = vocab_size
-
-    xi, pi = key_func(generator, n, vocab_size, eff_vocab_size)
-    tokens = torch.argsort(pi)[tokens]
-    if normalize:
-        tokens = tokens.float() / vocab_size
-
-    A = adjacency(tokens, xi, dist, k)
-    closest = torch.min(A, axis=1)[0]
-
-    return torch.min(closest)
-
-
-################################################################################
-
 
 watermarked_samples = genfromtxt(
     args.token_file + '-tokens-before-attack.csv', delimiter=",")
@@ -239,6 +165,7 @@ if args.method == "transform":
 
 elif args.method == "gumbel":
     test_stats = []
+
     def dist0(x, y): return ems_score(x, y)
 
     def test_stat0(tokens, n, k, generator, vocab_size, null=False): return phi(
@@ -255,8 +182,9 @@ elif args.method == "gumbel":
     test_stats.append(test_stat0)
 
     def dist1(x, y): return ems_adaptive(
-        x, y, torch.from_numpy(genfromtxt(args.token_file + '-empty-probs.csv',
-                                          delimiter=',')[Tindex, :])
+        x, y, torch.from_numpy(genfromtxt(
+            args.token_file + '-empty-probs.csv', delimiter=','
+        )[Tindex, :]), 1.0
     )
 
     def test_stat1(tokens, n, k, generator, vocab_size, null=False): return phi(
@@ -273,8 +201,9 @@ elif args.method == "gumbel":
     test_stats.append(test_stat1)
 
     def dist2(x, y): return ems_adaptive(
-        x, y, torch.from_numpy(genfromtxt(args.token_file + '-null-empty-probs.csv',
-                                          delimiter=',')[Tindex, :])
+        x, y, torch.from_numpy(genfromtxt(
+            args.token_file + '-empty-probs.csv', delimiter=','
+        )[Tindex, :]), 0.75
     )
 
     def test_stat2(tokens, n, k, generator, vocab_size, null=False): return phi(
@@ -290,6 +219,63 @@ elif args.method == "gumbel":
     )
     test_stats.append(test_stat2)
 
+    def dist3(x, y): return ems_adaptive(
+        x, y, torch.from_numpy(genfromtxt(
+            args.token_file + '-empty-probs.csv', delimiter=','
+        )[Tindex, :]), 0.5
+    )
+
+    def test_stat3(tokens, n, k, generator, vocab_size, null=False): return phi(
+        tokens=tokens,
+        n=n,
+        k=k,
+        generator=generator,
+        key_func=gumbel_key_func,
+        vocab_size=vocab_size,
+        dist=dist3,
+        null=null,
+        normalize=False
+    )
+    test_stats.append(test_stat3)
+
+    def dist4(x, y): return ems_adaptive(
+        x, y, torch.from_numpy(genfromtxt(
+            args.token_file + '-empty-probs.csv', delimiter=','
+        )[Tindex, :]), 0.25
+    )
+
+    def test_stat4(tokens, n, k, generator, vocab_size, null=False): return phi(
+        tokens=tokens,
+        n=n,
+        k=k,
+        generator=generator,
+        key_func=gumbel_key_func,
+        vocab_size=vocab_size,
+        dist=dist4,
+        null=null,
+        normalize=False
+    )
+    test_stats.append(test_stat4)
+
+    # def dist2(x, y): return ems_adaptive(
+    #     x, y, torch.from_numpy(genfromtxt(
+    #         args.token_file + '-null-empty-probs.csv', delimiter=','
+    #     )[Tindex, :])
+    # )
+
+    # def test_stat2(tokens, n, k, generator, vocab_size, null=False): return phi(
+    #     tokens=tokens,
+    #     n=n,
+    #     k=k,
+    #     generator=generator,
+    #     key_func=gumbel_key_func,
+    #     vocab_size=vocab_size,
+    #     dist=dist2,
+    #     null=null,
+    #     normalize=False
+    # )
+    # test_stats.append(test_stat2)
+
 else:
     raise
 
@@ -302,6 +288,7 @@ def test(tokens, seed, test_stats): return permutation_test(tokens,
                                                             k,
                                                             seed,
                                                             test_stats,
+                                                            log_file,
                                                             n_runs=args.n_runs)
 
 
@@ -337,12 +324,12 @@ null_sample = null_samples[Tindex, :]
 
 t0 = time.time()
 watermarked_pval = test(watermarked_sample, seeds[Tindex], [
-                        test_stats[i] for i in [0, 1]])
+                        test_stats[i] for i in [0, 1, 2, 3, 4]])
 log_file.write(f'Ran watermarked test in (t = {time.time()-t0} seconds)\n')
 log_file.flush()
 # t0 = time.time()
 # null_pval = test(null_sample, seeds[Tindex], [
-#                  test_stats[i] for i in [0, 2]])
+#                  test_stats[i] for i in [0, 5]])
 # log_file.write(f'Ran null test in (t = {time.time()-t0} seconds)\n')
 # log_file.flush()
 csvWriters[0].writerow(np.asarray(watermarked_pval))

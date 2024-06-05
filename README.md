@@ -68,26 +68,7 @@ Less than 1 GB.
 ### Generate watermarked tokens
 
 ```shell
-mkdir -p results
-mkdir -p log
-
-export PYTHONPATH=".":$PYTHONPATH
-
-for method in gumbel; do
-  for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
-    python textgen.py --save results/opt-$method-deletion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --deletion $pcts
-    python textgen.py --save results/opt-$method-insertion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --insertion $pcts
-    python textgen.py --save results/opt-$method-substitution-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --substitution $pcts
-  done
-done
-
-for method in gumbel; do
-  for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
-    python textgen.py --save results/gpt-$method-deletion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --deletion $pcts
-    python textgen.py --save results/gpt-$method-insertion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --insertion $pcts
-    python textgen.py --save results/gpt-$method-substitution-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --substitution $pcts
-  done
-done
+sbatch textgen.sh
 ```
 
 #### Expected running time
@@ -101,18 +82,7 @@ Less than 128 GB.
 ### Calculate p-values for texts
 
 ```shell
-for method in gumbel; do
-  for model in opt gpt; do
-    for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
-      for attack in deletion insertion substitution; do
-        mkdir -p results/$model-$method-$attack-10-10-$pcts.p-detect
-      done
-    done
-  done
-done
-
-chmod +x ./detect.sh
-parallel -j 10 --progress ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 10)
+sbatch detect.sh
 ```
 
 #### Expected running time
