@@ -56,7 +56,11 @@ for (template_index in seq_len(nrow(pvalue_files_templates))) {
   for (prompt_index in seq_len(prompt_count)) {
     # Python index in the file name
     # filename <- sub("XXX", prompt_index - 1, pvalue_files_template)
-    filename <- sub("XXX", prompt_index, paste0(pvalue_files_templates[template_index, ], collapse = ""))
+    filename <- sub(
+      "XXX",
+      prompt_index,
+      paste0(pvalue_files_templates[template_index, ], collapse = "")
+    )
     df <- rbind(
       df,
       c(
@@ -100,11 +104,27 @@ for (model_prefix in models_folders_prefix) {
     ggplot2::facet_wrap(~Metric) +
     ggplot2::theme_minimal() +
     ggplot2::theme(legend.position = "none")
-  ggplot2::ggsave(paste0("results/", model_prefix, "-histogram.pdf"), p, width = 7, height = 7)
+  ggplot2::ggsave(
+    paste0("results/", model_prefix, "-histogram.pdf"), p, width = 7, height = 7
+  )
 
   comparison_bipartite <- rbind(
-    cbind("Metric 1", df[df$LLM == model_prefix, "Metric.1"], "Metric 3", df[df$LLM == model_prefix, "Metric.3"], df[df$LLM == model_prefix, "Metric.1"] >= df[df$LLM == model_prefix, "Metric.3"]),
-    cbind("Metric 3", df[df$LLM == model_prefix, "Metric.3"], "Metric 2", df[df$LLM == model_prefix, "Metric.2"], df[df$LLM == model_prefix, "Metric.3"] >= df[df$LLM == model_prefix, "Metric.2"])
+    cbind(
+      "Metric 1",
+      df[df$LLM == model_prefix, "Metric.1"],
+      "Metric 3",
+      df[df$LLM == model_prefix, "Metric.3"],
+      df[df$LLM == model_prefix, "Metric.1"] >=
+        df[df$LLM == model_prefix, "Metric.3"]
+    ),
+    cbind(
+      "Metric 3",
+      df[df$LLM == model_prefix, "Metric.3"],
+      "Metric 2",
+      df[df$LLM == model_prefix, "Metric.2"],
+      df[df$LLM == model_prefix, "Metric.3"] >=
+        df[df$LLM == model_prefix, "Metric.2"]
+    )
   )
   comparison_bipartite <- data.frame(comparison_bipartite)
   names(comparison_bipartite) <- c("x", "y", "xend", "yend", "better")
@@ -112,7 +132,10 @@ for (model_prefix in models_folders_prefix) {
   comparison_bipartite$y <- as.numeric(comparison_bipartite$y)
   comparison_bipartite$yend <- as.numeric(comparison_bipartite$yend)
 
-  p <- ggplot2::ggplot(comparison_bipartite, ggplot2::aes(x = x, y = y, xend = xend, yend = yend, color = better)) +
+  p <- ggplot2::ggplot(
+    comparison_bipartite,
+    ggplot2::aes(x = x, y = y, xend = xend, yend = yend, color = better)
+  ) +
     ggplot2::geom_segment() +
     ggplot2::theme_minimal() +
     ggplot2::theme(legend.position = "none") +
@@ -122,5 +145,10 @@ for (model_prefix in models_folders_prefix) {
       labels = c("Metric 1", "Metric 3", "Metric 2"),
       expand = c(0, 0.1)
     )
-  ggplot2::ggsave(paste0("results/", model_prefix, "-comparison_bipartite.pdf"), p, width = 7, height = 7)
+  ggplot2::ggsave(
+    paste0("results/", model_prefix, "-comparison_bipartite.pdf"),
+    p,
+    width = 7,
+    height = 7
+  )
 }
