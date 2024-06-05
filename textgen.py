@@ -350,8 +350,7 @@ for itm in range(T):
             "constant", 0
         )
     else:
-        watermarked_sample = watermarked_sample[1:new_tokens+1+sum(
-            list(map(int, args.insertion_blocks_length.split(','))))]
+        watermarked_sample = watermarked_sample[1:new_tokens+1]
     attacked_tokens_writer.writerow(np.asarray(watermarked_sample.numpy()))
     if args.method == "transform":
         generator = torch.Generator()
