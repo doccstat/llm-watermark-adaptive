@@ -34,14 +34,28 @@ expanded_nodes=${expanded_nodes%?}
 
 echo "Expanded nodes: $expanded_nodes"
 
-# Create a GNU Parallel-compatible list of nodes with the number of slots (CPUs) per node
-parallel_node_list=$(scontrol show hostnames $SLURM_JOB_NODELIST | while read node; do echo -n "${node}/$(sinfo --exact -o "%C" -n ${node} | grep -oP '\d+(?=/\d+/\d+/)') "; done)
+# Initialize an empty array to hold node/cpu load pairs
+parallel_node_list=()
 
-echo "Parallel node list: $parallel_node_list"
+# Iterate over each node assigned to the job
+while read node; do
+  # Extract the current CPU load from scontrol output
+  cpus=$(scontrol show node "$node" | awk -F'=' '/CPULoad/ {gsub(/[^0-9.]/, "", $2); print $2}')
+
+  # Append the node and its CPU load to the list
+  parallel_node_list+=("${node}/${cpus}")
+done < <(scontrol show hostnames "$SLURM_JOB_NODELIST")
+
+# Join array elements into a single string with spaces
+parallel_node_list_string=$(IFS=$'\n'; echo "${parallel_node_list[*]}" | awk -F'/' '{print "anthony.li@" $1 " " $2}')
+echo "$parallel_node_list_string" > sshloginfile.txt
+
+# Output the result
+echo "Parallel node list: $parallel_node_list_string"
 
 # Run GNU Parallel with the list of nodes and their respective slots
 /home/anthony.li/.conda/envs/watermark/bin/parallel \
-  --sshloginfile <(echo "$parallel_node_list") \
+  --sshloginfile sshlogininfo.txt \
   -j $SLURM_NTASKS \
   --progress \
   bash ./detect-helper.sh {1} {2} {3} {4} \
