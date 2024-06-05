@@ -103,24 +103,6 @@ cd /home/anthony.li/llm-watermark-adaptive
 echo "Starting job with ID ${SLURM_JOB_ID} on ${SLURM_JOB_NODELIST}"
 echo $(which python)
 
-export PYTHONPATH=".":$PYTHONPATH
-
-for method in gumbel; do
-  for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
-    python textgen.py --save results/opt-$method-deletion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --deletion $pcts
-    python textgen.py --save results/opt-$method-insertion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --insertion $pcts
-    python textgen.py --save results/opt-$method-substitution-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --substitution $pcts
-  done
-done
-
-for method in gumbel; do
-  for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
-    python textgen.py --save results/gpt-$method-deletion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --deletion $pcts
-    python textgen.py --save results/gpt-$method-insertion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --insertion $pcts
-    python textgen.py --save results/gpt-$method-substitution-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --substitution $pcts
-  done
-done
-
 # expanded_nodes=$(scontrol show hostname $SLURM_JOB_NODELIST | tr '\n' ',')
 # /home/anthony.li/.conda/envs/watermark/bin/parallel --sshloginfile <(echo $expanded_nodes | sed 's/,$//') -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 1000)
 # /home/anthony.li/.conda/envs/watermark/bin/parallel --slf $SLURM_JOB_NODELIST -j $SLURM_NTASKS_PER_NODE --progress bash ./detect.sh {1} {2} ::: gumbel ::: $(seq 1 500)

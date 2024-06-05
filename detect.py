@@ -14,9 +14,7 @@ from watermarking.transform.score import transform_score, transform_edit_score
 from watermarking.transform.score import its_score, itsl_score
 from watermarking.transform.key import transform_key_func
 
-from watermarking.gumbel.score import gumbel_score, gumbel_edit_score
-from watermarking.gumbel.score import ems_score, emsl_score
-from watermarking.gumbel.score import ems_not_adaptive_score, ems_yes_adaptive_score
+from watermarking.gumbel.score import ems_score, ems_adaptive
 from watermarking.gumbel.key import gumbel_key_func
 
 import argparse
@@ -241,148 +239,56 @@ if args.method == "transform":
 
 elif args.method == "gumbel":
     test_stats = []
-    # def dist1(x, y): return gumbel_edit_score(x, y, gamma=args.gamma)
+    def dist0(x, y): return ems_score(x, y)
 
-    # def test_stat1(tokens, n, k, generator, vocab_size, null=False): return phi(
-    #     tokens=tokens,
-    #     n=n,
-    #     k=k,
-    #     generator=generator,
-    #     key_func=gumbel_key_func,
-    #     vocab_size=vocab_size,
-    #     dist=dist1,
-    #     null=null,
-    #     normalize=False
-    # )
-    # test_stats.append(test_stat1)
-    # def dist2(x, y): return gumbel_score(x, y)
-
-    # def test_stat2(tokens, n, k, generator, vocab_size, null=False): return phi(
-    #     tokens=tokens,
-    #     n=n,
-    #     k=k,
-    #     generator=generator,
-    #     key_func=gumbel_key_func,
-    #     vocab_size=vocab_size,
-    #     dist=dist2,
-    #     null=null,
-    #     normalize=False
-    # )
-    # test_stats.append(test_stat2)
-    # def dist3(x, y): return ems_score(x, y)
-
-    # def test_stat3(tokens, n, k, generator, vocab_size, null=False): return phi(
-    #     tokens=tokens,
-    #     n=n,
-    #     k=k,
-    #     generator=generator,
-    #     key_func=gumbel_key_func,
-    #     vocab_size=vocab_size,
-    #     dist=dist3,
-    #     null=null,
-    #     normalize=False
-    # )
-    # test_stats.append(test_stat3)
-    # def dist4(x, y): return emsl_score(x, y, gamma=args.gamma)
-
-    # def test_stat4(tokens, n, k, generator, vocab_size, null=False): return phi(
-    #     tokens=tokens,
-    #     n=n,
-    #     k=k,
-    #     generator=generator,
-    #     key_func=gumbel_key_func,
-    #     vocab_size=vocab_size,
-    #     dist=dist4,
-    #     null=null,
-    #     normalize=False
-    # )
-    # test_stats.append(test_stat4)
-    def dist5(x, y): return ems_not_adaptive_score(x, y)
-
-    def test_stat5(tokens, n, k, generator, vocab_size, null=False): return phi(
+    def test_stat0(tokens, n, k, generator, vocab_size, null=False): return phi(
         tokens=tokens,
         n=n,
         k=k,
         generator=generator,
         key_func=gumbel_key_func,
         vocab_size=vocab_size,
-        dist=dist5,
+        dist=dist0,
         null=null,
         normalize=False
     )
-    test_stats.append(test_stat5)
+    test_stats.append(test_stat0)
 
-    # def dist6(x, y): return ems_yes_adaptive_score(
-    #     x, y, torch.from_numpy(genfromtxt(args.token_file + '-probs.csv',
-    #                                       delimiter=',')[Tindex, :])
-    # )
-
-    # def test_stat6(tokens, n, k, generator, vocab_size, null=False): return phi(
-    #     tokens=tokens,
-    #     n=n,
-    #     k=k,
-    #     generator=generator,
-    #     key_func=gumbel_key_func,
-    #     vocab_size=vocab_size,
-    #     dist=dist6,
-    #     null=null,
-    #     normalize=False
-    # )
-    # test_stats.append(test_stat6)
-
-    def dist7(x, y): return ems_yes_adaptive_score(
+    def dist1(x, y): return ems_adaptive(
         x, y, torch.from_numpy(genfromtxt(args.token_file + '-empty-probs.csv',
                                           delimiter=',')[Tindex, :])
     )
 
-    def test_stat7(tokens, n, k, generator, vocab_size, null=False): return phi(
+    def test_stat1(tokens, n, k, generator, vocab_size, null=False): return phi(
         tokens=tokens,
         n=n,
         k=k,
         generator=generator,
         key_func=gumbel_key_func,
         vocab_size=vocab_size,
-        dist=dist7,
+        dist=dist1,
         null=null,
         normalize=False
     )
-    test_stats.append(test_stat7)
+    test_stats.append(test_stat1)
 
-    # def dist8(x, y): return ems_yes_adaptive_score(
-    #     x, y, torch.from_numpy(genfromtxt(args.token_file + '-null-probs.csv',
-    #                                       delimiter=',')[Tindex, :])
-    # )
-
-    # def test_stat8(tokens, n, k, generator, vocab_size, null=False): return phi(
-    #     tokens=tokens,
-    #     n=n,
-    #     k=k,
-    #     generator=generator,
-    #     key_func=gumbel_key_func,
-    #     vocab_size=vocab_size,
-    #     dist=dist8,
-    #     null=null,
-    #     normalize=False
-    # )
-    # test_stats.append(test_stat8)
-
-    def dist9(x, y): return ems_yes_adaptive_score(
+    def dist2(x, y): return ems_adaptive(
         x, y, torch.from_numpy(genfromtxt(args.token_file + '-null-empty-probs.csv',
                                           delimiter=',')[Tindex, :])
     )
 
-    def test_stat9(tokens, n, k, generator, vocab_size, null=False): return phi(
+    def test_stat2(tokens, n, k, generator, vocab_size, null=False): return phi(
         tokens=tokens,
         n=n,
         k=k,
         generator=generator,
         key_func=gumbel_key_func,
         vocab_size=vocab_size,
-        dist=dist9,
+        dist=dist2,
         null=null,
         normalize=False
     )
-    test_stats.append(test_stat9)
+    test_stats.append(test_stat2)
 
 else:
     raise
@@ -417,41 +323,11 @@ if args.method == "transform":
                           str(args.Tindex) + '-itsl.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
 elif args.method == "gumbel":
-    # csv_saves.append(open(args.token_file + '-detect/watermarked-' +
-    #                  str(args.Tindex) + '-gumbel-edit.csv', 'w'))
-    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    # csv_saves.append(open(args.token_file + '-detect/watermarked-' +
-    #                  str(args.Tindex) + '-gumbel.csv', 'w'))
-    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    # csv_saves.append(open(args.token_file + '-detect/watermarked-' +
-    #                  str(args.Tindex) + '-ems.csv', 'w'))
-    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    # csv_saves.append(open(args.token_file + '-detect/watermarked-' +
-    #                  str(args.Tindex) + '-emsl.csv', 'w'))
-    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
     csv_saves.append(open(args.token_file + '-detect/watermarked-' +
                      str(args.Tindex) + '.csv', 'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
     # csv_saves.append(open(args.token_file + '-detect/null-' +
-    #                  str(args.Tindex) + '-gumbel-edit.csv', 'w'))
-    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    # csv_saves.append(open(args.token_file + '-detect/null-' +
-    #                  str(args.Tindex) + '-gumbel.csv', 'w'))
-    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    # csv_saves.append(open(args.token_file + '-detect/null-' +
-    #                  str(args.Tindex) + '-ems.csv', 'w'))
-    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    # csv_saves.append(open(args.token_file + '-detect/null-' +
-    #                  str(args.Tindex) + '-emsl.csv', 'w'))
-    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    # csv_saves.append(open(args.token_file + '-detect/null-' +
-    #                  str(args.Tindex) + '-ems-not-adaptive.csv', 'w'))
-    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    # csv_saves.append(open(args.token_file + '-detect/null-' +
-    #                  str(args.Tindex) + '-ems-yes-adaptive.csv', 'w'))
-    # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    # csv_saves.append(open(args.token_file + '-detect/null-' +
-    #                  str(args.Tindex) + '-ems-yes-adaptive-empty.csv', 'w'))
+    #                  str(args.Tindex) + '.csv', 'w'))
     # csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
 else:
     raise

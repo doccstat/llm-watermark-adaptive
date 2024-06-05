@@ -92,7 +92,7 @@ done
 
 #### Expected running time
 
-Less than 10 minutes on 1 compute node with 1 NVIDIA A30 GPU and 128 CPU cores.
+Less than 2 hours on 1 compute node with 1 NVIDIA A30 GPU and 128 CPU cores.
 
 #### Expected memory usage
 
@@ -101,14 +101,14 @@ Less than 128 GB.
 ### Calculate p-values for texts
 
 ```shell
-mkdir -p log
-
 for method in gumbel; do
-  mkdir -p results/opt-$method-10-10.p-detect
-done
-
-for method in gumbel; do
-  mkdir -p results/gpt-$method-10-10.p-detect
+  for model in opt gpt; do
+    for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
+      for attack in deletion insertion substitution; do
+        mkdir -p results/$model-$method-$attack-10-10-$pcts.p-detect
+      done
+    done
+  done
 done
 
 chmod +x ./detect.sh
