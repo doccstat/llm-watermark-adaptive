@@ -5,10 +5,10 @@
 
 # Define how many nodes this job needs.
 # This example uses one 1 node.  Recall that each node has 128 CPU cores.
-#SBATCH --nodes=4
+##SBATCH --nodes=4
 
 #SBATCH --ntasks=512
-#SBATCH --ntasks-per-node=512
+##SBATCH --ntasks-per-node=128
 #SBATCH --cpus-per-task=1
 
 # Define a maximum amount of time the job will run in real time. This is a hard
@@ -85,12 +85,22 @@ for method in gumbel; do
 done
 
 expanded_nodes=$(scontrol show hostname $SLURM_JOB_NODELIST | tr '\n' ',')
-/home/anthony.li/.conda/envs/watermark/bin/parallel \
-  --sshloginfile <(echo $expanded_nodes | sed 's/,$//') \
-  -j $SLURM_NTASKS_PER_NODE \
-  --progress \
-  bash ./detect-helper.sh {1} {2} {3} {4} \
-  ::: gumbel \
-  ::: $(seq 1 200) \
-  ::: deletion insertion substitution \
-  ::: 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8
+expanded_nodes=${expanded_nodes%?}
+
+echo "Expanded nodes: $expanded_nodes"
+
+# Create a GNU Parallel-compatible list of nodes with the number of slots (CPUs) per node
+parallel_node_list=$(scontrol show hostnames $SLURM_JOB_NODELIST | while read node; do echo -n "${node}/$(sinfo --exact -o "%C" -n ${node} | grep -oP '\d+(?=/\d+/\d+/)') "; done)
+
+echo "Parallel node list: $parallel_node_list"
+
+# Run GNU Parallel with the list of nodes and their respective slots
+# /home/anthony.li/.conda/envs/watermark/bin/parallel \
+#   --sshloginfile <(echo $parallel_node_list) \
+#   -j $SLURM_NTASKS \
+#   --progress \
+#   bash ./detect-helper.sh {1} {2} {3} {4} \
+#   ::: gumbel \
+#   ::: $(seq 1 200) \
+#   ::: deletion insertion substitution \
+#   ::: 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8
