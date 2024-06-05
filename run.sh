@@ -101,6 +101,7 @@ module load JupyterLab/4.0.5-GCCcore-12.3.0
 cd /home/anthony.li/llm-watermark-adaptive
 
 echo "Starting job with ID ${SLURM_JOB_ID} on ${SLURM_JOB_NODELIST}"
+echo $(which python)
 
 export PYTHONPATH=".":$PYTHONPATH
 
