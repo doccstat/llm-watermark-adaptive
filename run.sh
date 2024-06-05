@@ -75,30 +75,32 @@ module load JupyterLab/4.0.5-GCCcore-12.3.0
 # module load R/4.3.2-gfbf-2023a
 
 # get unused socket per https://unix.stackexchange.com/a/132524
-readonly PORT=$(python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()')
+# readonly PORT=$(python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()')
 
 # This is where the actual work is done.  Execute your application, passing
 # any parameters requried.
 
-cat 1>&2 <<END
-1. SSH tunnel from your workstation using the following command:
+# cat 1>&2 <<END
+# 1. SSH tunnel from your workstation using the following command:
 
-   ssh -L ${PORT}:${HOSTNAME}:${PORT} -N ${USER}@arseven.stat.tamu.edu
+#    ssh -L ${PORT}:${HOSTNAME}:${PORT} -N ${USER}@arseven.stat.tamu.edu
 
-2. Use the URL returned by Jupyter that looks similar to the following:
+# 2. Use the URL returned by Jupyter that looks similar to the following:
 
-   http://127.0.0.1:${PORT}/lab?token=b16726df7fbb0f05142df6cb40ea279c517fc86c8ee4a86c
+#    http://127.0.0.1:${PORT}/lab?token=b16726df7fbb0f05142df6cb40ea279c517fc86c8ee4a86c
 
-When done using Jupyter, terminate the job by:
+# When done using Jupyter, terminate the job by:
 
-1. Issue the following command on the login node:
+# 1. Issue the following command on the login node:
 
-      scancel -f ${SLURM_JOB_ID}
-END
+#       scancel -f ${SLURM_JOB_ID}
+# END
 
 # jupyter-lab --no-browser --ip ${HOSTNAME} --port ${PORT}
 
 cd /home/anthony.li/llm-watermark-adaptive
+
+echo "Starting job with ID ${SLURM_JOB_ID} on ${SLURM_JOB_NODELIST}"
 
 export PYTHONPATH=".":$PYTHONPATH
 
