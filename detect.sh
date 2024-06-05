@@ -24,7 +24,7 @@
 # --mem will define memory per node and
 # --mem-per-cpu will define memory per CPU/core.
 ##SBATCH --mem-per-cpu=1024MB
-#SBATCH --mem=128GB        # The double hash means that this one is not in effect
+#SBATCH --mem=512GB        # The double hash means that this one is not in effect
 
 # Define any general resources required by this job.  In this example 1 "a30"
 # GPU is requested per node.  Note that gpu:1 would request any gpu type, if
