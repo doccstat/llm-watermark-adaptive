@@ -85,8 +85,8 @@ seeds = np.genfromtxt(args.token_file + '-seeds.csv',
                       delimiter=',', max_rows=1)
 
 watermarked_samples = genfromtxt(
-    args.token_file + '-tokens-before-attack.csv', delimiter=",")
-null_samples = genfromtxt(args.token_file + '-null.csv', delimiter=",")
+    args.token_file + '-attacked-tokens.csv', delimiter=",")
+# null_samples = genfromtxt(args.token_file + '-null.csv', delimiter=",")
 Tindex = min(args.Tindex, watermarked_samples.shape[0])
 log_file.write(f'Loaded the samples (t = {time.time()-t0} seconds)\n')
 log_file.flush()
@@ -311,7 +311,7 @@ else:
     raise
 
 watermarked_sample = watermarked_samples[Tindex, :]
-null_sample = null_samples[Tindex, :]
+# null_sample = null_samples[Tindex, :]
 
 t0 = time.time()
 watermarked_pval = test(watermarked_sample, seeds[Tindex], [
