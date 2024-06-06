@@ -56,6 +56,7 @@ echo "Parallel node list: $parallel_node_list_string"
 # Run GNU Parallel with the list of nodes and their respective slots
 /home/anthony.li/.conda/envs/watermark/bin/parallel \
   --sshloginfile sshloginfile.txt \
+  --sshdelay 0.1 \
   -j $SLURM_NTASKS \
   --progress \
   bash ./detect-helper.sh {1} {2} {3} {4} \
