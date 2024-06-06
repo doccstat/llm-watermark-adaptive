@@ -92,7 +92,9 @@ for method in gumbel; do
     done
   done
 done
-sbatch detect.sh
+while IFS= read -r command; do
+  sbatch detect.sh "$command"
+done < detect-commands.sh
 ```
 
 #### Expected running time
