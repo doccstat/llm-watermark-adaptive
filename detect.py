@@ -58,8 +58,8 @@ args = parser.parse_args()
 results['args'] = copy.deepcopy(args)
 
 log_file = open(
-    'log/' + str(args.Tindex) + str(args.deletion) +
-    str(args.insertion) + str(args.substitution) + '.log', 'w'
+    'log/' + str(args.Tindex) + "-" + str(args.deletion) + "-" +
+    str(args.insertion) + "-" + str(args.substitution) + '.log', 'w'
 )
 log_file.write(str(args) + '\n')
 log_file.flush()
