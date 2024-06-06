@@ -20,6 +20,7 @@ from watermarking.gumbel.key import gumbel_key_func
 import argparse
 
 import csv
+import sys
 
 results = defaultdict(dict)
 
@@ -44,6 +45,14 @@ parser.add_argument('--truncate_vocab', default=8, type=int)
 
 args = parser.parse_args()
 results['args'] = copy.deepcopy(args)
+
+try:
+    with open(f"{args.token_file}-detect/watermarked-{args.Tindex}.csv", 'r') as f:
+        reader = csv.reader(f)
+        if len(next(reader)) == 5:
+            sys.exit()
+except (FileNotFoundError, StopIteration):
+    pass
 
 log_file = open(
     'log/' + str(args.Tindex) + "-" +
