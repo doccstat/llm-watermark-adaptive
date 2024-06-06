@@ -167,3 +167,4 @@ watermarking/transform/its_levenshtein.c
 watermarking/transform/transform_levenshtein.c
 results/
 .Rhistory
+sshloginfile.txt
