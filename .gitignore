@@ -168,3 +168,4 @@ watermarking/transform/transform_levenshtein.c
 results/
 .Rhistory
 sshloginfile.txt
+detect-commands.sh
