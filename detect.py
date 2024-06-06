@@ -38,20 +38,8 @@ parser.add_argument('--Tindex', default=1, type=int)
 parser.add_argument('--prompt_tokens', default=50, type=int)
 parser.add_argument('--buffer_tokens', default=20, type=int)
 parser.add_argument('--n_runs', default=999, type=int)
-parser.add_argument('--max_seed', default=100000, type=int)
-parser.add_argument('--offset', action='store_true')
 
-parser.add_argument('--norm', default=1, type=int)
 parser.add_argument('--gamma', default=0.4, type=float)
-parser.add_argument('--nowatermark', action='store_true')
-
-parser.add_argument('--deletion', default=0.0, type=float)
-parser.add_argument('--insertion', default=0.0, type=float)
-parser.add_argument('--substitution', default=0.0, type=float)
-
-parser.add_argument('--kirch_gamma', default=0.25, type=float)
-parser.add_argument('--kirch_delta', default=1.0, type=float)
-
 parser.add_argument('--truncate_vocab', default=8, type=int)
 
 args = parser.parse_args()
