@@ -8,7 +8,7 @@
 #SBATCH --mem-per-cpu=1GB
 #SBATCH --output=/home/anthony.li/out/detect.%j.out
 #SBATCH --error=/home/anthony.li/out/detect.%j.err
-#SBATCH --mail-type=ALL
+#SBATCH --mail-type=FAIL,END
 #SBATCH --mail-user=anthony.li@tamu.edu
 
 module purge
