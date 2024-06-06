@@ -82,7 +82,7 @@ Less than 128 GB.
 ### Calculate p-values for texts
 
 ```shell
-rm detect-commands.sh
+rm -f detect-commands.sh
 for method in gumbel; do
   for Tindex in $(seq 1 200); do
     for attack in deletion insertion substitution; do
