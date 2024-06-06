@@ -10,6 +10,7 @@
 #SBATCH --error=/home/anthony.li/out/detect.%j.%a.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
+#SBATCH --array=1-6000
 
 module purge
 module load JupyterLab/4.0.5-GCCcore-12.3.0

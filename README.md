@@ -92,7 +92,7 @@ for method in gumbel; do
     done
   done
 done
-sbatch --array=1-6000 detect.sh
+sbatch detect.sh
 ```
 
 #### Expected running time
