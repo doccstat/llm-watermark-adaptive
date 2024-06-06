@@ -3,12 +3,12 @@
 #SBATCH --job-name=detect
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=1-00:00:00
+#SBATCH --time=0-12:00:00
 #SBATCH --partition=medium
 #SBATCH --mem-per-cpu=1GB
 #SBATCH --output=/home/anthony.li/out/detect.%j.out
 #SBATCH --error=/home/anthony.li/out/detect.%j.err
-#SBATCH --mail-type=FAIL,END
+#SBATCH --mail-type=FAIL,TIME_LIMIT
 #SBATCH --mail-user=anthony.li@tamu.edu
 
 module purge
