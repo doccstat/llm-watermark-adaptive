@@ -46,8 +46,8 @@ while read node; do
   parallel_node_list+=("${node}/${cpus}")
 done < <(scontrol show hostnames "$SLURM_JOB_NODELIST")
 
-# Join array elements into a single string with spaces
-parallel_node_list_string=$(IFS=$'\n'; echo "${parallel_node_list[*]}" | awk -F'/' '{print "anthony.li@" $1 " " $2}')
+# Generate sshloginfile.txt without extra spaces
+parallel_node_list_string=$(IFS=$'\n'; echo "${parallel_node_list[*]}" | awk -F'/' '{print "anthony.li@" $1 "#" $2}')
 echo "$parallel_node_list_string" > sshloginfile.txt
 
 # Output the result
