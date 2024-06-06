@@ -57,7 +57,10 @@ parser.add_argument('--truncate_vocab', default=8, type=int)
 args = parser.parse_args()
 results['args'] = copy.deepcopy(args)
 
-log_file = open('log/' + str(args.Tindex) + '.log', 'w')
+log_file = open(
+    'log/' + str(args.Tindex) + str(args.deletion) +
+    str(args.insertion) + str(args.substitution) + '.log', 'w'
+)
 log_file.write(str(args) + '\n')
 log_file.flush()
 
