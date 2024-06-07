@@ -1,6 +1,5 @@
 import time
 import torch
-from datasets import load_dataset
 
 from collections import defaultdict
 import copy
@@ -76,14 +75,6 @@ else:
 eff_vocab_size = vocab_size - args.truncate_vocab
 log_file.write(f'Loaded the model (t = {time.time()-t0} seconds)\n')
 log_file.flush()
-
-while True:
-    try:
-        dataset = load_dataset("allenai/c4", "realnewslike",
-                               split="train", streaming=True)
-        break
-    except:
-        time.sleep(3)
 
 prompt_tokens = args.prompt_tokens      # minimum prompt length
 buffer_tokens = args.buffer_tokens
@@ -278,8 +269,6 @@ elif args.method == "gumbel":
 
 else:
     raise
-
-ds_iterator = iter(dataset)
 
 
 def test(tokens, seed, test_stats): return permutation_test(tokens,
