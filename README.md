@@ -93,20 +93,15 @@ for method in gumbel; do
   done
 done
 
-# Initial job ID for the first dependency
 previous_job_id=""
-
 for offset in {0..5500..500}; do
     if [[ -z $previous_job_id ]]; then
-        # Submit the first job without a dependency
         job_id=$(sbatch detect.sh -- --offset=$offset | awk '{print $4}')
         echo "Submitted first job with ID $job_id"
     else
-        # Submit subsequent jobs with dependency on the completion of the previous job
         job_id=$(sbatch --dependency=afterany:$previous_job_id detect.sh -- --offset=$offset | awk '{print $4}')
         echo "Submitted job with ID $job_id, dependent on job $previous_job_id"
     fi
-    # Update the previous_job_id for the next iteration
     previous_job_id=$job_id
 done
 ```
