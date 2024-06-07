@@ -95,9 +95,9 @@ done
 sbatch detect_0.sh
 sbatch detect_1000.sh
 sbatch detect_2000.sh
-sbatch detect-3000.sh
-sbatch detect-4000.sh
-sbatch detect-5000.sh
+sbatch detect_3000.sh
+sbatch detect_4000.sh
+sbatch detect_5000.sh
 ```
 
 #### Expected running time
