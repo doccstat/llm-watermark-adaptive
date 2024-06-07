@@ -6,8 +6,8 @@
 #SBATCH --time=0-12:00:00
 #SBATCH --partition=medium
 #SBATCH --mem-per-cpu=1GB
-#SBATCH --output=/home/anthony.li/out/detect.%j.out
-#SBATCH --error=/home/anthony.li/out/detect.%j.err
+#SBATCH --output=/home/anthony.li/out/detect.%A.%a.out
+#SBATCH --error=/home/anthony.li/out/detect.%A.%a.err
 #SBATCH --mail-type=FAIL,TIME_LIMIT
 #SBATCH --mail-user=anthony.li@tamu.edu
 
@@ -18,7 +18,9 @@ cd /home/anthony.li/llm-watermark-adaptive
 
 echo "Starting job with ID ${SLURM_JOB_ID} on ${SLURM_JOB_NODELIST}"
 
-command="$1"
+command=$(sed -n "${SLURM_ARRAY_TASK_ID}p" detect-commands.sh)
 
+echo "Running task with SLURM_ARRAY_TASK_ID = $SLURM_ARRAY_TASK_ID"
 echo "Executing: $command"
+
 eval $command
