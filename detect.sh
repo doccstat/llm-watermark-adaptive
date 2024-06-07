@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=detect
-#SBATCH --ntasks=500
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --time=1-00:00:00
 #SBATCH --partition=medium
@@ -10,6 +10,7 @@
 #SBATCH --error=/home/anthony.li/out/detect.%A.%a.err
 #SBATCH --mail-type=FAIL,TIME_LIMIT
 #SBATCH --mail-user=anthony.li@tamu.edu
+#SBATCH --array=1-6000
 
 module purge
 module load JupyterLab/4.0.5-GCCcore-12.3.0
