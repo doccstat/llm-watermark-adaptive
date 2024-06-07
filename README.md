@@ -92,7 +92,12 @@ for method in gumbel; do
     done
   done
 done
-sbatch detect.sh
+sbatch --array=1-1000 detect.sh
+sbatch --array=1001-2000 detect.sh
+sbatch --array=2001-3000 detect.sh
+sbatch --array=3001-4000 detect.sh
+sbatch --array=4001-5000 detect.sh
+sbatch --array=5001-6000 detect.sh
 ```
 
 #### Expected running time
