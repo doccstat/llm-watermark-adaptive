@@ -10,17 +10,23 @@
 #SBATCH --error=/home/anthony.li/out/detect.%A.%a.err
 #SBATCH --mail-type=FAIL,TIME_LIMIT
 #SBATCH --mail-user=anthony.li@tamu.edu
+#SBATCH --array=1-1000
 
 module purge
 module load JupyterLab/4.0.5-GCCcore-12.3.0
 
 cd /home/anthony.li/llm-watermark-adaptive
 
+OFFSET=3000
+
 echo "Starting job with ID ${SLURM_JOB_ID} on ${SLURM_JOB_NODELIST}"
 
-command=$(sed -n "${SLURM_ARRAY_TASK_ID}p" detect-commands.sh)
+# Adjust the task ID calculation
+ACTUAL_TASK_ID=$((${SLURM_ARRAY_TASK_ID} + OFFSET))
 
-echo "Running task with SLURM_ARRAY_TASK_ID = $SLURM_ARRAY_TASK_ID"
+command=$(sed -n "${ACTUAL_TASK_ID}p" detect-commands.sh)
+
+echo "Running task with ACTUAL_TASK_ID = $ACTUAL_TASKID"
 echo "Executing: $command"
 
 eval $command
