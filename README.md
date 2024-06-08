@@ -84,9 +84,12 @@ Less than 128 GB.
 ```shell
 rm -f detect-commands.sh
 for method in gumbel; do
-  for Tindex in $(seq 0 199); do
-    for attack in deletion insertion substitution; do
-      for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
+  for attack in deletion insertion substitution; do
+    for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
+      for llm in gpt opt; do
+        mkdir -p results/$llm-$method-$attack-30-30-$pcts.p-detect
+      done
+      for Tindex in $(seq 0 199); do
         echo "bash ./detect-helper.sh $method $Tindex $attack $pcts" >> detect-commands.sh
       done
     done
