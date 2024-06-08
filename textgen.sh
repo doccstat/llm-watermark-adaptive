@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Provide a name for your job, so it may be recognized in the output of squeue
-# SBATCH --job-name=watermark
+# SBATCH --job-name=textgen
 
 # Define how many nodes this job needs.
 # This example uses one 1 node.  Recall that each node has 128 CPU cores.
@@ -29,12 +29,11 @@
 # Define any general resources required by this job.  In this example 1 "a30"
 # GPU is requested per node.  Note that gpu:1 would request any gpu type, if
 # available.  This cluster currenlty only contains NVIDIA A30 GPUs.
-##SBATCH --gres=gpu:a30:1
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:a30:1
 
 # Define the destination file name(s) for this batch scripts output.
 # The use of '%j' here uses the job ID as part of the filename.
-#SBATCH --output=/home/anthony.li/out/watermark.%j
+#SBATCH --output=/home/anthony.li/out/textgen.%j
 
 # Turn on mail notification. There are many possible values, and more than one
 # may be specified (using comma separated values):
@@ -82,16 +81,16 @@ export PYTHONPATH=".":$PYTHONPATH
 
 for method in gumbel; do
   for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
-    python textgen.py --save results/opt-$method-deletion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --deletion $pcts
-    python textgen.py --save results/opt-$method-insertion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --insertion $pcts
-    python textgen.py --save results/opt-$method-substitution-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --substitution $pcts
+    python textgen.py --save results/opt-$method-deletion-30-30-$pcts.p --n 30 --batch_size 50 --m 30 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --deletion $pcts
+    python textgen.py --save results/opt-$method-insertion-30-30-$pcts.p --n 30 --batch_size 50 --m 30 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --insertion $pcts
+    python textgen.py --save results/opt-$method-substitution-30-30-$pcts.p --n 30 --batch_size 50 --m 30 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --substitution $pcts
   done
 done
 
 for method in gumbel; do
   for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
-    python textgen.py --save results/gpt-$method-deletion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --deletion $pcts
-    python textgen.py --save results/gpt-$method-insertion-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --insertion $pcts
-    python textgen.py --save results/gpt-$method-substitution-10-10-$pcts.p --n 10 --batch_size 50 --m 10 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --substitution $pcts
+    python textgen.py --save results/gpt-$method-deletion-30-30-$pcts.p --n 30 --batch_size 50 --m 30 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --deletion $pcts
+    python textgen.py --save results/gpt-$method-insertion-30-30-$pcts.p --n 30 --batch_size 50 --m 30 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --insertion $pcts
+    python textgen.py --save results/gpt-$method-substitution-30-30-$pcts.p --n 30 --batch_size 50 --m 30 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --substitution $pcts
   done
 done
