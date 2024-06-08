@@ -252,12 +252,12 @@ for batch in range(n_batches):
 
     null_sample, null_prob, null_empty_prob = generate_rnd(
         prompts[idx], new_tokens+buffer_tokens, model, empty_prompts[idx])
-    null_samples.append(null_sample[:, prompt_tokens:])
+    null_samples.append(null_sample[:, buffer_tokens:])
     null_probs.append(null_prob[:, buffer_tokens:])
     null_empty_probs.append(null_empty_prob[:, buffer_tokens:])
     watermarked_sample, watermarked_prob, watermarked_empty_prob = generate_watermark(
         prompts[idx], seeds[idx], empty_prompts[idx])
-    watermarked_samples.append(watermarked_sample[:, prompt_tokens:])
+    watermarked_samples.append(watermarked_sample[:, buffer_tokens:])
     watermarked_probs.append(watermarked_prob[:, buffer_tokens:])
     watermarked_empty_probs.append(watermarked_empty_prob[:, buffer_tokens:])
     pbar.update(1)
