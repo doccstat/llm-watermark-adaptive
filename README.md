@@ -87,6 +87,7 @@ for method in gumbel; do
   for attack in deletion insertion substitution; do
     for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
       for llm in gpt opt; do
+        rm -rf results/$llm-$method-$attack-30-30-$pcts.p-detect
         mkdir -p results/$llm-$method-$attack-30-30-$pcts.p-detect
       done
       for Tindex in $(seq 0 199); do
@@ -97,7 +98,7 @@ for method in gumbel; do
 done
 
 previous_job_id=""
-for offset in {0..5500..500}; do
+for offset in {0..5000..1000}; do
     if [[ -z $previous_job_id ]]; then
         job_id=$(sbatch detect.sh -- --offset=$offset | awk '{print $4}')
         echo "Submitted first job with ID $job_id"

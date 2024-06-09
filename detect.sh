@@ -3,14 +3,14 @@
 #SBATCH --job-name=detect
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=0-06:00:00
+#SBATCH --time=0-04:00:00
 #SBATCH --partition=medium,long,xlong
 #SBATCH --mem-per-cpu=1GB
 #SBATCH --output=/home/anthony.li/out/detect.%A.%a.out
 #SBATCH --error=/home/anthony.li/out/detect.%A.%a.err
 #SBATCH --mail-type=FAIL,TIME_LIMIT
 #SBATCH --mail-user=anthony.li@tamu.edu
-#SBATCH --array=1-500
+#SBATCH --array=1-1000
 
 module purge
 module load JupyterLab/4.0.5-GCCcore-12.3.0
