@@ -49,7 +49,7 @@ def permutation_test(
 
 
 def phi(
-        tokens, n, k, generator, key_func, vocab_size, dist,
+        tokens, n, k, generator, key_func, vocab_size, dist, empty_probs,
         null=False, normalize=False
 ):
     if null:
@@ -64,19 +64,19 @@ def phi(
     if normalize:
         tokens = tokens.float() / vocab_size
 
-    A = adjacency(tokens, xi, dist, k)
+    A = adjacency(tokens, xi, dist, k, empty_probs)
     closest = torch.min(A, axis=1)[0]
 
     return torch.min(closest)
 
 
-def adjacency(tokens, xi, dist, k):
+def adjacency(tokens, xi, dist, k, empty_probs):
     m = len(tokens)
     n = len(xi)
 
     A = torch.empty(size=(m-(k-1), n))
     for i in range(m-(k-1)):
         for j in range(n):
-            A[i][j] = dist(tokens[i:i+k], xi[(j+torch.arange(k)) % n])
+            A[i][j] = dist(tokens[i:i+k], xi[(j+torch.arange(k)) % n], empty_probs[i:i+k])
 
     return A

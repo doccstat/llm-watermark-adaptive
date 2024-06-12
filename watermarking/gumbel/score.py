@@ -1,7 +1,7 @@
 import torch
 
 
-def ems_score(tokens, xi):
+def ems_score(tokens, xi, probs=None):
     xi_samp = torch.gather(xi, -1, tokens.unsqueeze(-1)).squeeze()
     return -torch.mean(torch.log(xi_samp))
 
