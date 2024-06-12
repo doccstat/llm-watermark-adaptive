@@ -1,7 +1,7 @@
 import torch
 
 
-def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_offset=True, empty_prompts=None):
+def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_offset=True, empty_prompts=None, fixed_inputs=None):
     batch_size = len(prompts)
 
     generator = torch.Generator()
@@ -47,8 +47,12 @@ def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_
         empty_probs = torch.nn.functional.softmax(
             empty_output.logits[:, -1], dim=-1)
 
-        tokens, sampling_prob = sampler(probs, pis, xis[torch.arange(
-            batch_size), (offset.squeeze()+i) % n])
+        if fixed_inputs is None:
+            tokens, sampling_prob = sampler(probs, pis, xis[torch.arange(
+                batch_size), (offset.squeeze()+i) % n])
+        else:
+            tokens = fixed_inputs[:, i]
+            sampling_prob = torch.gather(probs, 1, tokens)
         tokens = tokens.to(model.device)
         empty_sampling_prob = torch.gather(empty_probs, 1, tokens)
         sampling_prob = sampling_prob.to(model.device)

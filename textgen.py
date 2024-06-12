@@ -14,7 +14,7 @@ import copy
 
 import numpy as np
 
-from watermarking.generation import generate, generate_rnd
+from watermarking.generation import generate, generate_rnd, get_probs
 from watermarking.attacks import deletion_attack, insertion_attack, substitution_attack
 
 from watermarking.transform.sampler import transform_sampling
@@ -161,32 +161,36 @@ seeds_writer.writerow(np.asarray(seeds.squeeze().numpy()))
 seeds_save.close()
 
 if args.method == "transform":
-    def generate_watermark(prompt, seed, empty_prompts): return generate(
-        model,
-        prompt,
-        vocab_size,
-        n,
-        new_tokens+buffer_tokens,
-        seed,
-        transform_key_func,
-        transform_sampling,
-        random_offset=args.offset,
-        empty_prompts=empty_prompts
-    )
+    def generate_watermark(prompt, seed, empty_prompts, fixed_inputs=None):
+        return generate(
+            model,
+            prompt,
+            vocab_size,
+            n,
+            new_tokens+buffer_tokens,
+            seed,
+            transform_key_func,
+            transform_sampling,
+            random_offset=args.offset,
+            empty_prompts=empty_prompts,
+            fixed_inputs=fixed_inputs
+        )
 
 elif args.method == "gumbel":
-    def generate_watermark(prompt, seed, empty_prompts): return generate(
-        model,
-        prompt,
-        vocab_size,
-        n,
-        new_tokens+buffer_tokens,
-        seed,
-        gumbel_key_func,
-        gumbel_sampling,
-        random_offset=args.offset,
-        empty_prompts=empty_prompts
-    )
+    def generate_watermark(prompt, seed, empty_prompts, fixed_inputs=None):
+        return generate(
+            model,
+            prompt,
+            vocab_size,
+            n,
+            new_tokens+buffer_tokens,
+            seed,
+            gumbel_key_func,
+            gumbel_sampling,
+            random_offset=args.offset,
+            empty_prompts=empty_prompts,
+            fixed_inputs=fixed_inputs
+        )
 else:
     raise
 
@@ -337,6 +341,8 @@ if args.method == "transform":
     pi_save = open(args.save + "-pi.csv", "w")
     pi_writer = csv.writer(pi_save, delimiter=",")
 
+attacked_samples = copy.deepcopy(watermarked_samples)
+
 pbar = tqdm(total=T)
 for itm in range(T):
     watermarked_sample = watermarked_samples[itm]
@@ -356,6 +362,7 @@ for itm in range(T):
         )
     else:
         watermarked_sample = watermarked_sample[1:new_tokens+1]
+    attacked_samples[itm] = watermarked_sample
     attacked_tokens_writer.writerow(np.asarray(watermarked_sample.numpy()))
     if args.method == "transform":
         generator = torch.Generator()
@@ -375,4 +382,43 @@ log_file.flush()
 log_file.close()
 attacked_tokens_save.close()
 
+re_calculated_probs = []
+re_calculated_empty_probs = []
+
+re_calculated_probs_save = open(
+    args.save + "-re-calculated-probs.csv", "w")
+re_calculated_probs_writer = csv.writer(
+    re_calculated_probs_save, delimiter=",")
+re_calculated_empty_probs_save = open(
+    args.save + "-re-calculated-empty-probs.csv", "w")
+re_calculated_empty_probs_writer = csv.writer(
+    re_calculated_empty_probs_save, delimiter=",")
+
+pbar = tqdm(total=n_batches)
+for batch in range(n_batches):
+    idx = torch.arange(batch * args.batch_size,
+                       min(T, (batch + 1) * args.batch_size))
+
+    watermarked_sample, watermarked_prob, watermarked_empty_prob = generate_watermark(
+        prompts[idx], seeds[idx], empty_prompts[idx], fixed_inputs=attacked_samples[idx])
+    if not torch.equal(watermarked_sample, attacked_samples[idx]):
+        raise ValueError("watermarked_sample is not the same as attacked_samples[idx]")
+    re_calculated_probs.append(watermarked_prob)
+    re_calculated_empty_probs.append(watermarked_empty_prob)
+    pbar.update(1)
+pbar.close()
+re_calculated_probs = torch.vstack(re_calculated_probs)
+re_calculated_empty_probs = torch.vstack(re_calculated_empty_probs)
+for itm in range(T):
+    re_calculated_probs_writer.writerow(
+        np.asarray(re_calculated_probs[itm].numpy()))
+    re_calculated_empty_probs_writer.writerow(
+        np.asarray(re_calculated_empty_probs[itm].numpy()))
+re_calculated_probs_save.close()
+re_calculated_empty_probs_save.close()
+
+re_calculated_probs_writer.writerow(
+    np.asarray(get_probs(prompts[itm], watermarked_sample).numpy()))
+re_calculated_empty_probs_writer.writerow(
+    np.asarray(get_probs(empty_prompts[itm], watermarked_sample).numpy()))
 pickle.dump(results, open(args.save, "wb"))
