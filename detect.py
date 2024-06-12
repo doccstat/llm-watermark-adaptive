@@ -174,11 +174,11 @@ elif args.method == "gumbel":
     )
     test_stats.append(test_stat0)
 
-    def dist1(x, y): return ems_adaptive(
-        x, y, torch.from_numpy(genfromtxt(
-            args.token_file + '-empty-probs.csv', delimiter=','
-        )[Tindex, :]), 1.0
-    )
+    empty_probs = torch.from_numpy(genfromtxt(
+        args.token_file + '-empty-probs.csv', delimiter=','
+    )[Tindex, :])[:k]
+
+    def dist1(x, y): return ems_adaptive(x, y, empty_probs, 1.0)
 
     def test_stat1(tokens, n, k, generator, vocab_size, null=False): return phi(
         tokens=tokens,
@@ -193,11 +193,7 @@ elif args.method == "gumbel":
     )
     test_stats.append(test_stat1)
 
-    def dist2(x, y): return ems_adaptive(
-        x, y, torch.from_numpy(genfromtxt(
-            args.token_file + '-empty-probs.csv', delimiter=','
-        )[Tindex, :]), 0.75
-    )
+    def dist2(x, y): return ems_adaptive(x, y, empty_probs, 0.75)
 
     def test_stat2(tokens, n, k, generator, vocab_size, null=False): return phi(
         tokens=tokens,
@@ -212,11 +208,7 @@ elif args.method == "gumbel":
     )
     test_stats.append(test_stat2)
 
-    def dist3(x, y): return ems_adaptive(
-        x, y, torch.from_numpy(genfromtxt(
-            args.token_file + '-empty-probs.csv', delimiter=','
-        )[Tindex, :]), 0.5
-    )
+    def dist3(x, y): return ems_adaptive(x, y, empty_probs, 0.5)
 
     def test_stat3(tokens, n, k, generator, vocab_size, null=False): return phi(
         tokens=tokens,
@@ -231,11 +223,7 @@ elif args.method == "gumbel":
     )
     test_stats.append(test_stat3)
 
-    def dist4(x, y): return ems_adaptive(
-        x, y, torch.from_numpy(genfromtxt(
-            args.token_file + '-empty-probs.csv', delimiter=','
-        )[Tindex, :]), 0.25
-    )
+    def dist4(x, y): return ems_adaptive(x, y, empty_probs, 0.25)
 
     def test_stat4(tokens, n, k, generator, vocab_size, null=False): return phi(
         tokens=tokens,
