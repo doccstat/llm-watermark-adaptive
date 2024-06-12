@@ -79,20 +79,16 @@ echo $(which python)
 
 export PYTHONPATH=".":$PYTHONPATH
 
-python textgen.py --save results/opt-gumbel-deletion-10-10-0.0.p --n 10 --batch_size 100 --m 10 --buffer_tokens 20 --model facebook/opt-1.3b --seed 1 --T 1000 --method gumbel
+n=20
+m=20
 
-# for method in gumbel; do
-#   for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
-#     python textgen.py --save results/opt-$method-deletion-10-10-$pcts.p --n 10 --batch_size 100 --m 10 --buffer_tokens 20 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --deletion $pcts
-#     python textgen.py --save results/opt-$method-insertion-10-10-$pcts.p --n 10 --batch_size 100 --m 10 --buffer_tokens 20 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --insertion $pcts
-#     python textgen.py --save results/opt-$method-substitution-10-10-$pcts.p --n 10 --batch_size 100 --m 10 --buffer_tokens 20 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --substitution $pcts
-#   done
-# done
-
-# for method in gumbel; do
-#   for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
-#     python textgen.py --save results/gpt-$method-deletion-10-10-$pcts.p --n 10 --batch_size 100 --m 10 --buffer_tokens 20 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --deletion $pcts
-#     python textgen.py --save results/gpt-$method-insertion-10-10-$pcts.p --n 10 --batch_size 100 --m 10 --buffer_tokens 20 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --insertion $pcts
-#     python textgen.py --save results/gpt-$method-substitution-10-10-$pcts.p --n 10 --batch_size 100 --m 10 --buffer_tokens 20 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --substitution $pcts
-#   done
-# done
+for method in gumbel; do
+  for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
+    for attack in deletion insertion substitution; do
+      python textgen.py --save results/gpt-$method-$attack-$n-$m-$pcts.p --n $n --batch_size 100 --m $m --buffer_tokens 0 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --${attack} $pcts
+    done
+    for attack in deletion insertion substitution; do
+      python textgen.py --save results/opt-$method-$attack-$n-$m-$pcts.p --n $n --batch_size 100 --m $m --buffer_tokens 0 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --${attack} $pcts
+    done
+  done
+done

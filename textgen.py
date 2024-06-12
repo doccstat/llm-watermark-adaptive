@@ -5,7 +5,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import MarianMTModel, MarianTokenizer
 
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 
 from tqdm import tqdm
 from collections import defaultdict
@@ -83,8 +83,13 @@ eff_vocab_size = vocab_size - args.truncate_vocab
 log_file.write(f'Loaded the model (t = {time()-t0} seconds)\n')
 log_file.flush()
 
-dataset = load_dataset("allenai/c4", "realnewslike",
-                       split="train", streaming=True)
+try:
+    dataset = load_from_disk(
+        '/scratch/user/anthony.li/datasets/c4_realnewslike_train/'
+    )
+except:
+    dataset = load_dataset("allenai/c4", "realnewslike",
+                           split="train", streaming=True)
 
 
 def corrupt(tokens):
