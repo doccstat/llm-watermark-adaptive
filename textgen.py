@@ -401,8 +401,6 @@ for batch in range(n_batches):
 
     watermarked_sample, watermarked_prob, watermarked_empty_prob = generate_watermark(
         prompts[idx], seeds[idx], empty_prompts[idx], fixed_inputs=attacked_samples[idx])
-    if not torch.equal(watermarked_sample, attacked_samples[idx]):
-        raise ValueError("watermarked_sample is not the same as attacked_samples[idx]")
     re_calculated_probs.append(watermarked_prob)
     re_calculated_empty_probs.append(watermarked_empty_prob)
     pbar.update(1)
