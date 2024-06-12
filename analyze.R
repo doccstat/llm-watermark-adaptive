@@ -5,8 +5,8 @@ models <- c("facebook/opt-1.3b", "openai-community/gpt2")
 models_folders_prefix <- c("opt", "gpt")
 generation_methods <- c("gumbel")
 attacks <- c("deletion", "insertion", "substitution")
-n <- 10
-m <- 10
+n <- 20
+m <- 20
 attack_pcts <- c(
   "0.0", "0.05", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8"
 )
