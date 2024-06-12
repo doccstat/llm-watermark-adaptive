@@ -65,6 +65,13 @@ Less than 1 minute on a single core CPU machine.
 
 Less than 1 GB.
 
+### (Optional) Download the pre-trained language model
+
+```shell
+mkdir -p /scratch/user/anthony.li/datasets/c4_realnewslike_train/
+sbatch download.sh
+```
+
 ### Generate watermarked tokens
 
 ```shell
@@ -87,8 +94,8 @@ for method in gumbel; do
   for attack in deletion insertion substitution; do
     for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
       for llm in gpt opt; do
-        rm -rf results/$llm-$method-$attack-30-30-$pcts.p-detect
-        mkdir -p results/$llm-$method-$attack-30-30-$pcts.p-detect
+        rm -rf results/$llm-$method-$attack-20-20-$pcts.p-detect
+        mkdir -p results/$llm-$method-$attack-20-20-$pcts.p-detect
       done
       for Tindex in $(seq 0 199); do
         echo "bash ./detect-helper.sh $method $Tindex $attack $pcts" >> detect-commands.sh
