@@ -51,7 +51,7 @@ def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_
             tokens, sampling_prob = sampler(probs, pis, xis[torch.arange(
                 batch_size), (offset.squeeze()+i) % n])
         else:
-            tokens = fixed_inputs[:, i]
+            tokens = fixed_inputs[:, i].unsqueeze(1)
             sampling_prob = torch.gather(probs, 1, tokens)
         tokens = tokens.to(model.device)
         empty_sampling_prob = torch.gather(empty_probs, 1, tokens)
