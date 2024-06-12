@@ -14,7 +14,7 @@ import copy
 
 import numpy as np
 
-from watermarking.generation import generate, generate_rnd, get_probs
+from watermarking.generation import generate, generate_rnd
 from watermarking.attacks import deletion_attack, insertion_attack, substitution_attack
 
 from watermarking.transform.sampler import transform_sampling
@@ -417,8 +417,4 @@ for itm in range(T):
 re_calculated_probs_save.close()
 re_calculated_empty_probs_save.close()
 
-re_calculated_probs_writer.writerow(
-    np.asarray(get_probs(prompts[itm], watermarked_sample).numpy()))
-re_calculated_empty_probs_writer.writerow(
-    np.asarray(get_probs(empty_prompts[itm], watermarked_sample).numpy()))
 pickle.dump(results, open(args.save, "wb"))
