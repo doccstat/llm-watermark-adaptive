@@ -160,7 +160,7 @@ elif args.method == "gumbel":
     test_stats = []
 
     empty_probs = torch.from_numpy(genfromtxt(
-        args.token_file + '-empty-probs.csv', delimiter=','
+        args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
     )[Tindex, :])
 
     def dist0(x, y, probs): return ems_score(x, y)
