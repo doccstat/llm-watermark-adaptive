@@ -116,7 +116,7 @@ p <- ggplot2::ggplot() +
   ggplot2::facet_grid(LLM ~ GenerationMethod + Attack) +
   ggplot2::theme_minimal() +
   ggplot2::scale_x_continuous(labels = scales::percent)
-ggplot2::ggsave("results/powers-0.05.pdf", p, width = 7, height = 7)
+ggplot2::ggsave("results/powers-0.05.pdf", p, width = 10, height = 7)
 
 p <- ggplot2::ggplot() +
   ggplot2::geom_line(
@@ -126,7 +126,7 @@ p <- ggplot2::ggplot() +
   ggplot2::facet_grid(LLM ~ GenerationMethod + Attack) +
   ggplot2::theme_minimal() +
   ggplot2::scale_x_continuous(labels = scales::percent)
-ggplot2::ggsave("results/powers-0.01.pdf", p, width = 7, height = 7)
+ggplot2::ggsave("results/powers-0.01.pdf", p, width = 10, height = 7)
 
 p <- ggplot2::ggplot() +
   ggplot2::geom_histogram(
