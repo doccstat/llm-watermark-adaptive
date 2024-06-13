@@ -97,7 +97,7 @@ for method in gumbel; do
         rm -rf results/$llm-$method-$attack-20-20-$pcts.p-detect
         mkdir -p results/$llm-$method-$attack-20-20-$pcts.p-detect
       done
-      for Tindex in $(seq 0 999); do
+      for Tindex in $(seq 0 199); do
         echo "bash ./detect-helper.sh $method $Tindex $attack $pcts" >> detect-commands.sh
       done
     done
@@ -105,7 +105,7 @@ for method in gumbel; do
 done
 
 previous_job_id=""
-for offset in {0..29000..1000}; do
+for offset in {0..5000..1000}; do
     if [[ -z $previous_job_id ]]; then
         job_id=$(sbatch detect.sh -- --offset=$offset | awk '{print $4}')
         echo "Submitted first job with ID $job_id"
