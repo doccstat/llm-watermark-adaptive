@@ -42,9 +42,26 @@ for (model_index in seq_along(models)) {
 }
 
 prompt_count <- 200
-df <- matrix(NA, 0, 5 + 2)
+df <- matrix(NA, 0, 5 + 5)
+
+filename <- sub("XXX", 0, paste0(pvalue_files_templates[1, ], collapse = ""))
+metric_count <- ncol(read.csv(filename, header = FALSE))
 
 for (template_index in seq_len(nrow(pvalue_files_templates))) {
+  probs <- read.csv(
+    paste0(
+      paste0(
+        pvalue_files_templates[template_index, seq_len(12)], collapse = ""
+      ), ".p-probs.csv"
+    ), header = FALSE
+  )
+  empty_probs <- read.csv(
+    paste0(
+      paste0(
+        pvalue_files_templates[template_index, seq_len(12)], collapse = ""
+      ), ".p-empty-probs.csv"
+    ), header = FALSE
+  )
   for (prompt_index in seq_len(prompt_count)) {
     # Python index in the file name
     filename <- sub(
@@ -60,8 +77,11 @@ for (template_index in seq_len(nrow(pvalue_files_templates))) {
         pvalue_files_templates[template_index, 6],
         pvalue_files_templates[template_index, 12],
         prompt_index,
-        c("Metric 1", "Metric 2", "Metric 3", "Metric 4", "Metric 5"),
-        matrix(read.csv(filename, header = FALSE))
+        paste("Metric", seq_len(metric_count)),
+        matrix(read.csv(filename, header = FALSE)),
+        sum(abs(probs[prompt_index, ] - empty_probs[prompt_index, ])),
+        sqrt(sum((probs[prompt_index, ] - empty_probs[prompt_index, ])^2)),
+        max(abs(probs[prompt_index, ] - empty_probs[prompt_index, ]))
       )
     )
   }
@@ -69,12 +89,15 @@ for (template_index in seq_len(nrow(pvalue_files_templates))) {
 
 df <- data.frame(df)
 names(df) <- c(
-  "LLM", "GenerationMethod", "Attack", "AttackPct", "PromptIndex",
-  "Metric", "PValue"
+  "LLM", "GenerationMethod", "Attack", "AttackPct", "PromptIndex", "Metric",
+  "PValue", "ProbsErrorL1Norm", "ProbsErrorL2Norm", "ProbsErrorInfNorm"
 )
 df <- as.data.frame(lapply(df, unlist))
 df$AttackPct <- as.numeric(df$AttackPct)
 df$PValue <- as.numeric(df$PValue)
+df$ProbsErrorL1Norm <- as.numeric(df$ProbsErrorL1Norm)
+df$ProbsErrorL2Norm <- as.numeric(df$ProbsErrorL2Norm)
+df$ProbsErrorInfNorm <- as.numeric(df$ProbsErrorInfNorm)
 
 powers <- rbind(
   cbind(
@@ -127,6 +150,49 @@ p <- ggplot2::ggplot() +
   ggplot2::theme_minimal() +
   ggplot2::scale_x_continuous(labels = scales::percent)
 ggplot2::ggsave("results/powers-0.01.pdf", p, width = 10, height = 7)
+
+both_metric2_metric3 <- NULL
+for (prompt_index in seq_len(prompt_count)) {
+  both_metric2_metric3 <- c(
+    both_metric2_metric3,
+    df[metric_count * (prompt_index - 1) + 2, "PValue"] <= 0.05 &
+      df[metric_count * (prompt_index - 1) + 3, "PValue"] <= 0.05
+  )
+}
+metric2_not_metric3 <- !both_metric2_metric3
+both_metric2_metric3 <- seq_len(prompt_count)[both_metric2_metric3]
+metric2_not_metric3 <- seq_len(prompt_count)[metric2_not_metric3]
+
+df2 <- df[df$PromptIndex %in% both_metric2_metric3 & df$Metric == "Metric 2", ]
+df2 <- data.frame(
+  PromptIndex = rep(both_metric2_metric3, each = 3),
+  Norms = rep(c("L1", "L2", "Inf"), length(both_metric2_metric3)),
+  Value = matrix(t(as.matrix(
+    df2[, c("ProbsErrorL1Norm", "ProbsErrorL2Norm", "ProbsErrorInfNorm")]
+  )), byrow = TRUE),
+  group = "Both Metric 2 and Metric 3"
+)
+df3 <- df[df$PromptIndex %in% metric2_not_metric3 & df$Metric == "Metric 3", ]
+df3 <- data.frame(
+  PromptIndex = rep(metric2_not_metric3, each = 3),
+  Norms = rep(c("L1", "L2", "Inf"), length(metric2_not_metric3)),
+  Value = matrix(t(as.matrix(
+    df3[, c("ProbsErrorL1Norm", "ProbsErrorL2Norm", "ProbsErrorInfNorm")]
+  )), byrow = TRUE),
+  group = "Metric 2 but not Metric 3"
+)
+
+ggplot2::ggplot() +
+  ggplot2::geom_boxplot(
+    ggplot2::aes(x = Norms, y = Value, fill = group),
+    data = rbind(df2, df3)
+  ) +
+  ggplot2::theme_minimal() +
+  ggplot2::scale_y_log10() +
+  ggplot2::scale_x_discrete(
+    labels = c("L1", "L2", "Inf"),
+    expand = c(0, 0.1)
+  )
 
 p <- ggplot2::ggplot() +
   ggplot2::geom_histogram(
