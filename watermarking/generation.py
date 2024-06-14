@@ -1,7 +1,34 @@
 import torch
 
 
-def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_offset=True, empty_prompts=None, fixed_inputs=None):
+def generate(
+        model, prompts, vocab_size, n, m, seeds, key_func, sampler,
+        random_offset=True, empty_prompts=None, fixed_inputs=None
+):
+    """
+    Generate sequences using a language model.
+
+    Args:
+        model (torch.nn.Module): The language model.
+        prompts (torch.Tensor): The input prompts for generation.
+        vocab_size (int): The size of the vocabulary.
+        n (int): The number of watermarked sequences.
+        m (int): The number of tokens to generate.
+        seeds (List[int]): The seeds for random number generation.
+        key_func (Callable): The function to generate watermark keys.
+        sampler (Callable): The function to sample tokens based on
+            probabilities.
+        random_offset (bool, optional): Whether to use random offset for
+            watermark key generation. Defaults to True.
+        empty_prompts (torch.Tensor, optional): The empty input prompts for
+            generation. Defaults to None.
+        fixed_inputs (torch.Tensor, optional): The fixed inputs for generation.
+            Defaults to None.
+
+    Returns:
+        Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: The generated tokens,
+        sampling probabilities, and empty sampling probabilities.
+    """
     batch_size = len(prompts)
 
     generator = torch.Generator()
@@ -38,7 +65,10 @@ def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_
                 output = model(
                     inputs[:, -1:], past_key_values=past, attention_mask=attn)
                 empty_output = model(
-                    empty_inputs[:, -1:], past_key_values=empty_past, attention_mask=empty_attn)
+                    empty_inputs[:, -1:],
+                    past_key_values=empty_past,
+                    attention_mask=empty_attn
+                )
             else:
                 output = model(inputs)
                 empty_output = model(empty_inputs)
@@ -71,7 +101,11 @@ def generate(model, prompts, vocab_size, n, m, seeds, key_func, sampler, random_
         empty_attn = torch.cat(
             [empty_attn, attn.new_ones((attn.shape[0], 1))], dim=-1)
 
-    return inputs.detach().cpu(), sampling_probs.detach().cpu(), empty_sampling_probs.detach().cpu()
+    return (
+        inputs.detach().cpu(),
+        sampling_probs.detach().cpu(),
+        empty_sampling_probs.detach().cpu()
+    )
 
 # generate unwatermarked completions of token length m given list of prompts
 
@@ -95,7 +129,10 @@ def generate_rnd(prompts, m, model, empty_prompts):
                 output = model(
                     inputs[:, -1:], past_key_values=past, attention_mask=attn)
                 empty_output = model(
-                    empty_inputs[:, -1:], past_key_values=empty_past, attention_mask=empty_attn)
+                    empty_inputs[:, -1:],
+                    past_key_values=empty_past,
+                    attention_mask=empty_attn
+                )
             else:
                 output = model(inputs)
                 empty_output = model(empty_inputs)
@@ -123,4 +160,8 @@ def generate_rnd(prompts, m, model, empty_prompts):
         empty_attn = torch.cat(
             [empty_attn, attn.new_ones((attn.shape[0], 1))], dim=-1)
 
-    return inputs.detach().cpu(), sampling_probs.detach().cpu(), empty_sampling_probs.detach().cpu()
+    return (
+        inputs.detach().cpu(),
+        sampling_probs.detach().cpu(),
+        empty_sampling_probs.detach().cpu()
+    )
