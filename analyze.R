@@ -151,48 +151,69 @@ p <- ggplot2::ggplot() +
   ggplot2::scale_x_continuous(labels = scales::percent)
 ggplot2::ggsave("results/powers-0.01.pdf", p, width = 10, height = 7)
 
-both_metric2_metric3 <- NULL
-for (prompt_index in seq_len(prompt_count)) {
-  both_metric2_metric3 <- c(
-    both_metric2_metric3,
-    df[metric_count * (prompt_index - 1) + 2, "PValue"] <= 0.05 &
-      df[metric_count * (prompt_index - 1) + 3, "PValue"] <= 0.05
+df_probs <- NULL
+for (model_prefix in models_folders_prefix) {
+  df_llm <- df[df$LLM == model_prefix, ]
+  both_metric2_metric3 <- NULL
+  for (prompt_index in seq_len(prompt_count)) {
+    both_metric2_metric3 <- c(
+      both_metric2_metric3,
+      df_llm[metric_count * (prompt_index - 1) + 2, "PValue"] <= 0.05 &
+        df_llm[metric_count * (prompt_index - 1) + 3, "PValue"] <= 0.05
+    )
+  }
+  both_metric2_metric3 <- seq_len(prompt_count)[both_metric2_metric3]
+
+  metric2_not_metric3 <- NULL
+  for (prompt_index in seq_len(prompt_count)) {
+    metric2_not_metric3 <- c(
+      metric2_not_metric3,
+      df_llm[metric_count * (prompt_index - 1) + 2, "PValue"] <= 0.05 &
+        df_llm[metric_count * (prompt_index - 1) + 3, "PValue"] > 0.05
+    )
+  }
+  metric2_not_metric3 <- seq_len(prompt_count)[metric2_not_metric3]
+
+  df2 <- df_llm[
+    df_llm$PromptIndex %in% both_metric2_metric3 & df_llm$Metric == "Metric 2",
+  ]
+  df2 <- data.frame(
+    LLM = model_prefix,
+    PromptIndex = rep(both_metric2_metric3, each = 3),
+    Norms = rep(c("L1", "L2", "Inf"), length(both_metric2_metric3)),
+    Value = matrix(t(as.matrix(
+      df2[, c("ProbsErrorL1Norm", "ProbsErrorL2Norm", "ProbsErrorInfNorm")]
+    )), byrow = TRUE),
+    group = "Both Metric 2 and Metric 3"
   )
+  df3 <- df_llm[
+    df_llm$PromptIndex %in% metric2_not_metric3 & df_llm$Metric == "Metric 3",
+  ]
+  df3 <- data.frame(
+    LLM = model_prefix,
+    PromptIndex = rep(metric2_not_metric3, each = 3),
+    Norms = rep(c("L1", "L2", "Inf"), length(metric2_not_metric3)),
+    Value = matrix(t(as.matrix(
+      df3[, c("ProbsErrorL1Norm", "ProbsErrorL2Norm", "ProbsErrorInfNorm")]
+    )), byrow = TRUE),
+    group = "Metric 2 but not Metric 3"
+  )
+  df_probs <- rbind(df_probs, df2, df3)
 }
-metric2_not_metric3 <- !both_metric2_metric3
-both_metric2_metric3 <- seq_len(prompt_count)[both_metric2_metric3]
-metric2_not_metric3 <- seq_len(prompt_count)[metric2_not_metric3]
-
-df2 <- df[df$PromptIndex %in% both_metric2_metric3 & df$Metric == "Metric 2", ]
-df2 <- data.frame(
-  PromptIndex = rep(both_metric2_metric3, each = 3),
-  Norms = rep(c("L1", "L2", "Inf"), length(both_metric2_metric3)),
-  Value = matrix(t(as.matrix(
-    df2[, c("ProbsErrorL1Norm", "ProbsErrorL2Norm", "ProbsErrorInfNorm")]
-  )), byrow = TRUE),
-  group = "Both Metric 2 and Metric 3"
-)
-df3 <- df[df$PromptIndex %in% metric2_not_metric3 & df$Metric == "Metric 3", ]
-df3 <- data.frame(
-  PromptIndex = rep(metric2_not_metric3, each = 3),
-  Norms = rep(c("L1", "L2", "Inf"), length(metric2_not_metric3)),
-  Value = matrix(t(as.matrix(
-    df3[, c("ProbsErrorL1Norm", "ProbsErrorL2Norm", "ProbsErrorInfNorm")]
-  )), byrow = TRUE),
-  group = "Metric 2 but not Metric 3"
-)
-
-ggplot2::ggplot() +
+p <- ggplot2::ggplot() +
   ggplot2::geom_boxplot(
-    ggplot2::aes(x = Norms, y = Value, fill = group),
-    data = rbind(df2, df3)
+    ggplot2::aes(x = LLM, y = Value, fill = group),
+    data = df_probs
   ) +
   ggplot2::theme_minimal() +
-  ggplot2::scale_y_log10() +
-  ggplot2::scale_x_discrete(
-    labels = c("L1", "L2", "Inf"),
-    expand = c(0, 0.1)
-  )
+  ggplot2::facet_wrap(~ Norms, scales = "free_y") +
+  ggplot2::theme(
+    strip.text.x = ggplot2::element_text(margin = ggplot2::margin(1, 1, 1, 1))
+  ) +
+  ggplot2::scale_y_continuous(limits = c(0, NA))
+ggplot2::ggsave(
+  "results/probs-error-metric23-boxplot.pdf", p, width = 10, height = 6
+)
 
 p <- ggplot2::ggplot() +
   ggplot2::geom_histogram(
