@@ -238,6 +238,40 @@ elif args.method == "gumbel":
         )
     test_stats.append(test_stat2)
 
+    def dist3(x, y, probs): return ems_adaptive(x, y, probs, 1.0, 1/25000)
+
+    def test_stat3(tokens, n, k, generator, vocab_size, null=False):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=gumbel_key_func,
+            vocab_size=vocab_size,
+            dist=dist3,
+            empty_probs=empty_probs,
+            null=null,
+            normalize=False
+        )
+    test_stats.append(test_stat3)
+
+    def dist4(x, y, probs): return ems_adaptive(x, y, probs, 1.0, 1/10000)
+
+    def test_stat4(tokens, n, k, generator, vocab_size, null=False):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=gumbel_key_func,
+            vocab_size=vocab_size,
+            dist=dist4,
+            empty_probs=empty_probs,
+            null=null,
+            normalize=False
+        )
+    test_stats.append(test_stat4)
+
     # def dist2(x, y): return ems_adaptive(
     #     x, y, torch.from_numpy(genfromtxt(
     #         args.token_file + '-null-empty-probs.csv', delimiter=','
@@ -304,7 +338,7 @@ watermarked_sample = watermarked_samples[Tindex, :]
 
 t0 = time.time()
 watermarked_pval = test(watermarked_sample, seeds[Tindex], [
-    test_stats[i] for i in [0, 1, 2, 3]])
+    test_stats[i] for i in [0, 1, 2, 3, 4, 5]])
 log_file.write(f'Ran watermarked test in (t = {time.time()-t0} seconds)\n')
 log_file.flush()
 # t0 = time.time()

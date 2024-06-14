@@ -8,6 +8,6 @@ def ems_score(tokens, xi, probs=None):
 
 def ems_adaptive(tokens, xi, probs, percentage=1.0, threshold=0.0):
     xi_samp = torch.gather(xi, -1, tokens.unsqueeze(-1)).squeeze()
-    probs = torch.where(probs < threshold, torch.tensor(0.5), probs)
+    probs = torch.where(probs <= threshold, torch.tensor(0.5), probs)
     metrics = (1 / probs - 1) * torch.log(xi_samp)
     return -torch.mean(metrics[int(-percentage * len(metrics)):])
