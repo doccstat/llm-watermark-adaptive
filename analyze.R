@@ -130,6 +130,12 @@ powers <- rbind(
   )
 )
 powers <- data.frame(powers)
+powers$Metric <-
+  factor(powers$Metric, levels = paste("Metric", seq_len(metric_count)))
+powers <- powers[
+  order(powers$Threshold, powers$LLM, powers$GenerationMethod, powers$Metric),
+  c("Threshold", "LLM", "GenerationMethod", "Metric", "x")
+]
 
 p <- ggplot2::ggplot() +
   ggplot2::geom_line(
