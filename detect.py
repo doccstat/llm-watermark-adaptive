@@ -87,7 +87,7 @@ seeds = np.genfromtxt(args.token_file + '-seeds.csv',
                       delimiter=',', max_rows=1)
 
 watermarked_samples = genfromtxt(
-    args.token_file + '-tokens-before-attack.csv', delimiter=",")
+    args.token_file + '-attacked-tokens.csv', delimiter=",")
 # null_samples = genfromtxt(args.token_file + '-null.csv', delimiter=",")
 Tindex = min(args.Tindex, watermarked_samples.shape[0])
 log_file.write(f'Loaded the samples (t = {time.time()-t0} seconds)\n')
