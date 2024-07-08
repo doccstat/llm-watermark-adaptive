@@ -134,7 +134,6 @@ powers$Metric <-
   factor(powers$Metric, levels = paste("Metric", seq_len(metric_count)))
 powers <- powers[
   order(powers$Threshold, powers$LLM, powers$GenerationMethod, powers$Metric),
-  c("Threshold", "LLM", "GenerationMethod", "Metric", "x")
 ]
 
 p <- ggplot2::ggplot() +
@@ -142,7 +141,7 @@ p <- ggplot2::ggplot() +
     ggplot2::aes(x = AttackPct, y = x, color = Metric),
     data = powers[powers$Threshold == 0.05, ]
   ) +
-  ggplot2::facet_grid(LLM ~ GenerationMethod + Attack) +
+  ggplot2::facet_grid(LLM ~ GenerationMethod + Attack, scales = "free_y") +
   ggplot2::theme_minimal() +
   ggplot2::scale_x_continuous(labels = scales::percent)
 ggplot2::ggsave("results/powers-0.05.pdf", p, width = 10, height = 7)
@@ -152,7 +151,7 @@ p <- ggplot2::ggplot() +
     ggplot2::aes(x = AttackPct, y = x, color = Metric),
     data = powers[powers$Threshold == 0.01, ]
   ) +
-  ggplot2::facet_grid(LLM ~ GenerationMethod + Attack) +
+  ggplot2::facet_grid(LLM ~ GenerationMethod + Attack, scales = "free_y") +
   ggplot2::theme_minimal() +
   ggplot2::scale_x_continuous(labels = scales::percent)
 ggplot2::ggsave("results/powers-0.01.pdf", p, width = 10, height = 7)
