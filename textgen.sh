@@ -79,6 +79,7 @@ echo "Starting job with ID ${SLURM_JOB_ID} on ${SLURM_JOB_NODELIST}"
 echo $(which python)
 
 export PYTHONPATH=".":$PYTHONPATH
+export HF_HOME=/scratch/user/anthony.li/hf_cache
 
 n=20
 m=20
