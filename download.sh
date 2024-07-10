@@ -3,7 +3,7 @@
 #SBATCH --job-name=download
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=0-00:05:00
+#SBATCH --time=1-00:00:00
 #SBATCH --partition=medium,long,xlong
 #SBATCH --mem-per-cpu=1GB
 #SBATCH --output=/home/anthony.li/out/download.%j.out
