@@ -33,7 +33,8 @@
 
 # Define the destination file name(s) for this batch scripts output.
 # The use of '%j' here uses the job ID as part of the filename.
-#SBATCH --output=/home/anthony.li/out/textgen.%j
+#SBATCH --output=/home/anthony.li/out/textgen.%j.out
+#SBATCH --error=/home/anthony.li/out/textgen.%j.err
 
 # Turn on mail notification. There are many possible values, and more than one
 # may be specified (using comma separated values):
