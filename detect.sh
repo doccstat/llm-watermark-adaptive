@@ -34,8 +34,9 @@ esac
 done
 
 echo "Offset is set to: $OFFSET"
-
 echo "Starting job with ID ${SLURM_JOB_ID} on ${SLURM_JOB_NODELIST}"
+
+export HF_HOME=/scratch/user/anthony.li/hf_cache
 
 # Calculate the actual task ID using the offset
 ACTUAL_TASK_ID=$((${SLURM_ARRAY_TASK_ID} + OFFSET))
