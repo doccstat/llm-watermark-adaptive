@@ -15,11 +15,11 @@
 # upper bound, meaning that if the job runs longer than what is written here, it
 # will be terminated by the server.
 #              d-hh:mm:ss
-#SBATCH --time=1-00:00:00
+#SBATCH --time=7-00:00:00
 
 # Define the partition on which the job shall run.
 ##SBATCH --partition=gpu
-#SBATCH --partition=medium,long,xlong
+#SBATCH --partition=long,xlong
 
 # Define how much memory you need. Choose one of the following:
 # --mem will define memory per node and
