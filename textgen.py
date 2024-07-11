@@ -75,8 +75,19 @@ t0 = time()
 torch.manual_seed(args.seed)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-tokenizer = AutoTokenizer.from_pretrained(args.model)
-model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
+try:
+    tokenizer = AutoTokenizer.from_pretrained(
+        "/scratch/user/anthony.li/models/" + args.model + "/tokenizer")
+    model = AutoModelForCausalLM.from_pretrained(
+        "/scratch/user/anthony.li/models/" + args.model + "/model")
+    model = model.to(device)
+    log_file.write(f'Loaded the local model\n')
+except:
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
+    log_file.write(f'Loaded the model\n')
+
+log_file.flush()
 
 vocab_size = model.get_output_embeddings().weight.shape[0]
 eff_vocab_size = vocab_size - args.truncate_vocab
@@ -85,7 +96,7 @@ log_file.flush()
 
 try:
     dataset = load_from_disk(
-        '/scratch/user/anthony.li/datasets/c4_realnewslike_train/'
+        '/scratch/user/anthony.li/datasets/allenai/c4/realnewslike/train'
     )
 except:
     dataset = load_dataset("allenai/c4", "realnewslike",
