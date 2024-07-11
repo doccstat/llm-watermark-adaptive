@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=download
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=64
 #SBATCH --time=1-00:00:00
 #SBATCH --partition=medium,long,xlong
 #SBATCH --mem-per-cpu=1GB
