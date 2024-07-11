@@ -238,6 +238,8 @@ if args.model == "facebook/opt-1.3b":
     empty_text = ""
 elif args.model == "openai-community/gpt2":
     empty_text = " "
+elif args.model == "meta-llama/Meta-Llama-3-8B":
+    empty_text = ""
 else:
     raise
 empty_token = tokenizer.encode(
