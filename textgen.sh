@@ -18,7 +18,8 @@
 #SBATCH --time=1-00:00:00
 
 # Define the partition on which the job shall run.
-#SBATCH --partition=gpu
+##SBATCH --partition=gpu
+#SBATCH --partition=medium,long,xlong
 
 # Define how much memory you need. Choose one of the following:
 # --mem will define memory per node and
@@ -29,7 +30,7 @@
 # Define any general resources required by this job.  In this example 1 "a30"
 # GPU is requested per node.  Note that gpu:1 would request any gpu type, if
 # available.  This cluster currenlty only contains NVIDIA A30 GPUs.
-#SBATCH --gres=gpu:a30:1
+##SBATCH --gres=gpu:a30:1
 
 # Define the destination file name(s) for this batch scripts output.
 # The use of '%j' here uses the job ID as part of the filename.
@@ -92,6 +93,7 @@ for method in gumbel; do
     # for attack in deletion insertion substitution; do
     #   python textgen.py --save results/opt-$method-$attack-$n-$m-$pcts.p --n $n --batch_size 100 --m $m --buffer_tokens 0 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --${attack} $pcts
     # done
+    # no gpu for llama
     for attack in deletion insertion substitution; do
       python textgen.py --save results/ml3-$method-$attack-$n-$m-$pcts.p --n $n --batch_size 100 --m $m --buffer_tokens 0 --model meta-llama/Meta-Llama-3-8B --seed 1 --T 1000 --method $method --${attack} $pcts
     done
