@@ -50,7 +50,7 @@ results['args'] = copy.deepcopy(args)
 try:
     with open(f"{args.token_file}-detect/watermarked-{args.Tindex}.csv", 'r') as f:
         reader = csv.reader(f)
-        if len(next(reader)) == 5:
+        if len(next(reader)) == 25:
             sys.exit()
 except (FileNotFoundError, StopIteration):
     pass
