@@ -48,6 +48,7 @@ filename <- sub("XXX", 0, paste0(pvalue_files_templates[1, ], collapse = ""))
 metric_count <- ncol(read.csv(filename, header = FALSE))
 
 for (template_index in seq_len(nrow(pvalue_files_templates))) {
+  print(paste("Processing", template_index, "of", nrow(pvalue_files_templates)))
   probs <- read.csv(
     paste0(
       paste0(
@@ -111,7 +112,7 @@ powers <- rbind(
         AttackPct = df$AttackPct,
         Metric = df$Metric
       ),
-      FUN = mean
+      FUN = function(x) mean(x, na.rm = TRUE)
     )
   ),
   cbind(
@@ -125,7 +126,7 @@ powers <- rbind(
         AttackPct = df$AttackPct,
         Metric = df$Metric
       ),
-      FUN = mean
+      FUN = function(x) mean(x, na.rm = TRUE)
     )
   )
 )
@@ -135,25 +136,28 @@ powers$Metric <-
 powers <- powers[
   order(powers$Threshold, powers$LLM, powers$GenerationMethod, powers$Metric),
 ]
+powers$LineType <- ifelse(powers$Metric == "Metric 1", "solid", "dashed")
 
 p <- ggplot2::ggplot() +
   ggplot2::geom_line(
-    ggplot2::aes(x = AttackPct, y = x, color = Metric),
-    data = powers[powers$Threshold == 0.05, ]
+    ggplot2::aes(x = AttackPct, y = x, color = Metric, linetype = LineType),
+    data = powers[powers$Threshold == 0.05 & powers$Metric %in% paste("Metric", c(1, 3, 13, 14, 21, 22, 23)), ]
   ) +
   ggplot2::facet_grid(LLM ~ GenerationMethod + Attack, scales = "free_y") +
   ggplot2::theme_minimal() +
-  ggplot2::scale_x_continuous(labels = scales::percent)
+  ggplot2::scale_x_continuous(labels = scales::percent) +
+  ggplot2::guides(linetype = "none")
 ggplot2::ggsave("results/powers-0.05.pdf", p, width = 10, height = 7)
 
 p <- ggplot2::ggplot() +
   ggplot2::geom_line(
-    ggplot2::aes(x = AttackPct, y = x, color = Metric),
-    data = powers[powers$Threshold == 0.01, ]
+    ggplot2::aes(x = AttackPct, y = x, color = Metric, linetype = LineType),
+    data = powers[powers$Threshold == 0.01 & powers$Metric %in% paste("Metric", c(1, 3, 13, 14, 21, 22, 23)), ]
   ) +
   ggplot2::facet_grid(LLM ~ GenerationMethod + Attack, scales = "free_y") +
   ggplot2::theme_minimal() +
-  ggplot2::scale_x_continuous(labels = scales::percent)
+  ggplot2::scale_x_continuous(labels = scales::percent) +
+  ggplot2::guides(linetype = "none")
 ggplot2::ggsave("results/powers-0.01.pdf", p, width = 10, height = 7)
 
 df_probs <- NULL
