@@ -167,7 +167,7 @@ elif args.method == "gumbel":
         args.token_file + '-probs.csv', delimiter=','
     )[Tindex, :])
     empty_probs = torch.from_numpy(genfromtxt(
-        args.token_file + '-empty-probs.csv', delimiter=','
+        args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
     )[Tindex, :])
 
     def metric1(x, y, probs): return ems_score(x, y)
