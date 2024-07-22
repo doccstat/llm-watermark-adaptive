@@ -68,7 +68,6 @@ Less than 1 GB.
 ### (Optional) Download the pre-trained language model
 
 ```shell
-mkdir -p /scratch/user/anthony.li/datasets/c4_realnewslike_train/
 sbatch download.sh
 ```
 
@@ -91,15 +90,13 @@ Less than 128 GB.
 ```shell
 rm -f detect-commands.sh
 for method in gumbel; do
-  for attack in deletion; do
-  # for attack in deletion insertion substitution; do
-    # for pcts in 0.0 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8; do
-    for pcts in 0.0; do
+  for attack in deletion insertion substitution; do
+    for pcts in 0.0 0.05 0.1 0.2 0.3; do
       for llm in gpt opt; do
         rm -rf results/$llm-$method-$attack-20-20-$pcts.p-detect
         mkdir -p results/$llm-$method-$attack-20-20-$pcts.p-detect
       done
-      for Tindex in $(seq 0 999); do
+      for Tindex in $(seq 0 399); do
         echo "bash ./detect-helper.sh $method $Tindex $attack $pcts" >> detect-commands.sh
       done
     done
@@ -112,12 +109,19 @@ for offset in {0..5000..1000}; do
         job_id=$(sbatch detect.sh -- --offset=$offset | awk '{print $4}')
         echo "Submitted first job with ID $job_id"
     else
-        sleep 600
+        sleep 3600
         job_id=$(sbatch --dependency=afterany:$previous_job_id detect.sh -- --offset=$offset | awk '{print $4}')
         echo "Submitted job with ID $job_id, dependent on job $previous_job_id"
     fi
     previous_job_id=$job_id
 done
+```
+
+#### Collect results
+
+```shell
+tar -czvf results-20-20-10.tar.gz results
+tar -xzvf results-20-20-10.tar.gz
 ```
 
 #### Expected running time
@@ -128,7 +132,7 @@ Less than 24 hours on 8 compute nodes with no GPU and 28 CPU cores each.
 
 Less than 10 GB per compute node.
 
-### Change point analysis
+### Analysis
 
 ```shell
 parallel -j 8 --progress Rscript analyze.R {1} {2} ::: $(seq 1 400 2801) ::: $(seq 400 400 3200)
@@ -138,16 +142,3 @@ Rscript analyze.R 1 3200
 #### Expected running time
 
 Less than 12 hours on 8 compute nodes with no GPU and 28 CPU cores each.
-
-##### Running time test
-
-The following command should run in less than 10 minutes on 1 compute node
-with no GPU and 28 CPU cores.
-
-```shell
-Rscript analyze.R 1 5
-```
-
-#### Expected memory usage
-
-Less than 10 GB per compute node.
