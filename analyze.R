@@ -8,7 +8,7 @@ attacks <- c("deletion", "insertion", "substitution")
 n <- 20
 m <- 20
 attack_pcts <- c(
-  "0.0", "0.05", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8"
+  "0.0", "0.05", "0.1", "0.2", "0.3"
 )
 watermarked_or_null <- c("watermarked")
 
@@ -41,7 +41,7 @@ for (model_index in seq_along(models)) {
   }
 }
 
-prompt_count <- 200
+prompt_count <- 400
 df <- matrix(NA, 0, 5 + 5)
 
 filename <- sub("XXX", 0, paste0(pvalue_files_templates[1, ], collapse = ""))
@@ -80,6 +80,10 @@ for (template_index in seq_len(nrow(pvalue_files_templates))) {
         prompt_index,
         paste("Metric", seq_len(metric_count)),
         matrix(read.csv(filename, header = FALSE)),
+        # matrix(tryCatch(
+        #   read.csv(filename, header = FALSE),
+        #   error = function(e) rep(NA, metric_count)
+        # )),
         sum(abs(probs[prompt_index, ] - empty_probs[prompt_index, ])),
         sqrt(sum((probs[prompt_index, ] - empty_probs[prompt_index, ])^2)),
         max(abs(probs[prompt_index, ] - empty_probs[prompt_index, ]))
@@ -138,10 +142,12 @@ powers <- powers[
 ]
 powers$LineType <- ifelse(powers$Metric == "Metric 1", "solid", "dashed")
 
+metric_subset <- paste("Metric", c(1, 3, 13, 14, 21, 22, 23))
+
 p <- ggplot2::ggplot() +
   ggplot2::geom_line(
     ggplot2::aes(x = AttackPct, y = x, color = Metric, linetype = LineType),
-    data = powers[powers$Threshold == 0.05 & powers$Metric %in% paste("Metric", c(1, 3, 13, 14, 21, 22, 23)), ]
+    data = powers[powers$Threshold == 0.05 & powers$Metric %in% metric_subset, ]
   ) +
   ggplot2::facet_grid(LLM ~ GenerationMethod + Attack, scales = "free_y") +
   ggplot2::theme_minimal() +
@@ -152,7 +158,7 @@ ggplot2::ggsave("results/powers-0.05.pdf", p, width = 10, height = 7)
 p <- ggplot2::ggplot() +
   ggplot2::geom_line(
     ggplot2::aes(x = AttackPct, y = x, color = Metric, linetype = LineType),
-    data = powers[powers$Threshold == 0.01 & powers$Metric %in% paste("Metric", c(1, 3, 13, 14, 21, 22, 23)), ]
+    data = powers[powers$Threshold == 0.01 & powers$Metric %in% metric_subset, ]
   ) +
   ggplot2::facet_grid(LLM ~ GenerationMethod + Attack, scales = "free_y") +
   ggplot2::theme_minimal() +
