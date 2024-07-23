@@ -10,9 +10,6 @@
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:a30:1
 
-##SBATCH --time=7-00:00:00
-##SBATCH --partition=long,xlong
-
 #SBATCH --mem=128GB
 #SBATCH --output=/home/anthony.li/out/textgen.%j.out
 #SBATCH --error=/home/anthony.li/out/textgen.%j.err
