@@ -7,7 +7,6 @@
 #SBATCH --cpus-per-task=1
 
 #SBATCH --time=4-00:00:00
-#SBATCH --partition=gpu,xgpu
 #SBATCH --gres=gpu:a30:1
 
 #SBATCH --mem=128GB
@@ -41,9 +40,5 @@ for method in gumbel; do
     for attack in deletion insertion substitution; do
       python textgen.py --save results/opt-$method-$attack-$n-$m-$pcts.p --n $n --batch_size 100 --m $m --buffer_tokens 0 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --${attack} $pcts --candidate_prompt_max 10
     done
-    # no gpu for llama
-    # for attack in deletion insertion substitution; do
-    #   python textgen.py --save results/ml3-$method-$attack-$n-$m-$pcts.p --n $n --batch_size 100 --m $m --buffer_tokens 0 --model meta-llama/Meta-Llama-3-8B --seed 1 --T 1000 --method $method --${attack} $pcts --candidate_prompt_max 10
-    # done
   done
 done
