@@ -64,6 +64,9 @@ parser.add_argument('--language', default="french", type=str)
 
 parser.add_argument('--truncate_vocab', default=8, type=int)
 
+parser.add_argument('--candidate_prompt_max', default=0, type=int,
+                    help="The maximum number of candidate prompts to consider, excluding the empty prompt and the ICL prompt. -1 means all prompts.")
+
 args = parser.parse_args()
 results['args'] = copy.deepcopy(args)
 
@@ -254,6 +257,9 @@ with open("example/outputs.json") as file:
         candidate_prompts.append(
             torch.vstack([candidate_token for _ in range(T)])
         )
+
+if args.candidate_prompt_max >= 0:
+    candidate_prompts = candidate_prompts[:args.candidate_prompt_max]
 
 empty_prompt_save = open(args.save + '-empty-prompt.txt', 'w')
 if args.model == "facebook/opt-1.3b":

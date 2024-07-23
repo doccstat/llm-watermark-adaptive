@@ -39,14 +39,14 @@ m=20
 for method in gumbel; do
   for pcts in 0.0 0.05 0.1 0.2 0.3; do
     for attack in deletion insertion substitution; do
-      python textgen.py --save results/gpt-$method-$attack-$n-$m-$pcts.p --n $n --batch_size 100 --m $m --buffer_tokens 0 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --${attack} $pcts
+      python textgen.py --save results/gpt-$method-$attack-$n-$m-$pcts.p --n $n --batch_size 100 --m $m --buffer_tokens 0 --model openai-community/gpt2 --seed 1 --T 1000 --method $method --${attack} $pcts --candidate_prompt_max 10
     done
     for attack in deletion insertion substitution; do
-      python textgen.py --save results/opt-$method-$attack-$n-$m-$pcts.p --n $n --batch_size 100 --m $m --buffer_tokens 0 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --${attack} $pcts
+      python textgen.py --save results/opt-$method-$attack-$n-$m-$pcts.p --n $n --batch_size 100 --m $m --buffer_tokens 0 --model facebook/opt-1.3b --seed 1 --T 1000 --method $method --${attack} $pcts --candidate_prompt_max 10
     done
     # no gpu for llama
     # for attack in deletion insertion substitution; do
-    #   python textgen.py --save results/ml3-$method-$attack-$n-$m-$pcts.p --n $n --batch_size 100 --m $m --buffer_tokens 0 --model meta-llama/Meta-Llama-3-8B --seed 1 --T 1000 --method $method --${attack} $pcts
+    #   python textgen.py --save results/ml3-$method-$attack-$n-$m-$pcts.p --n $n --batch_size 100 --m $m --buffer_tokens 0 --model meta-llama/Meta-Llama-3-8B --seed 1 --T 1000 --method $method --${attack} $pcts --candidate_prompt_max 10
     # done
   done
 done
