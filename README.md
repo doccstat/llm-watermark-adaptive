@@ -113,7 +113,6 @@ for offset in {0..5000..1000}; do
         job_id=$(sbatch detect.sh -- --offset=$offset | awk '{print $4}')
         echo "Submitted first job with ID $job_id"
     else
-        sleep 3600
         job_id=$(sbatch --dependency=afterany:$previous_job_id detect.sh -- --offset=$offset | awk '{print $4}')
         echo "Submitted job with ID $job_id, dependent on job $previous_job_id"
     fi
