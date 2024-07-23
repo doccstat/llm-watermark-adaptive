@@ -85,6 +85,10 @@ Less than 2 hours on 1 compute node with 1 NVIDIA A30 GPU and 128 CPU cores.
 
 Less than 128 GB.
 
+> [!NOTE]
+> Variables starting with `_` are not being used and safe to remove in
+> future development.
+
 ### Calculate p-values for texts
 
 ```shell
