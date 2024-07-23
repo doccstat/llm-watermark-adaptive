@@ -79,7 +79,7 @@ sbatch textgen.sh
 
 #### Expected running time
 
-Less than 2 hours on 1 compute node with 1 NVIDIA A30 GPU and 128 CPU cores.
+Less than 5 hours on 1 compute node with 1 NVIDIA A30 GPU and 128 CPU cores.
 
 #### Expected memory usage
 
