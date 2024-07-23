@@ -13,7 +13,7 @@ attack_pcts <- c(
 watermarked_or_null <- c("watermarked")
 
 pvalue_files_templates <- matrix(NA, 0, 15)
-for (model_index in seq_along(models)) {
+for (model_index in seq_along(models)) {  # nolint
   for (generation_methods_index in seq_along(generation_methods)) {
     for (attack_index in seq_along(attacks)) {
       for (attack_pcts_index in seq_along(attack_pcts)) {
@@ -79,11 +79,10 @@ for (template_index in seq_len(nrow(pvalue_files_templates))) {
         pvalue_files_templates[template_index, 12],
         prompt_index,
         paste("Metric", seq_len(metric_count)),
-        matrix(read.csv(filename, header = FALSE)),
-        # matrix(tryCatch(
-        #   read.csv(filename, header = FALSE),
-        #   error = function(e) rep(NA, metric_count)
-        # )),
+        matrix(tryCatch(
+          read.csv(filename, header = FALSE),
+          error = function(e) rep(NA, metric_count)
+        )),
         sum(abs(probs[prompt_index, ] - empty_probs[prompt_index, ])),
         sqrt(sum((probs[prompt_index, ] - empty_probs[prompt_index, ])^2)),
         max(abs(probs[prompt_index, ] - empty_probs[prompt_index, ]))
