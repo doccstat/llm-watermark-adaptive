@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=textgen
+#SBATCH --job-name=textgen-cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=128
 #SBATCH --ntasks-per-node=128

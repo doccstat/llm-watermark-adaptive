@@ -493,6 +493,11 @@ for batch in range(n_batches):
             re_calculated_empty_probs.append(watermarked_empty_prob)
         elif candidate_prompt_idx == len(candidate_prompts) - 1:
             re_calculated_icl_probs.append(watermarked_empty_prob)
+
+    # Convert list to tensor before applying tensor operations
+    candidate_probs_tensor = torch.stack(candidate_probs)
+
+    # Now perform the log and sum operations
     best_candidate_idx = torch.argmax(
         torch.sum(torch.log(candidate_probs), 2), 0
     )
