@@ -434,7 +434,7 @@ attacked_tokens_save.close()
 icl_samples = torch.vstack([
     torch.nn.functional.pad(
         icl_sample, (0, icl_sample_max_length - len(icl_sample)),
-        "constant", candidate_token
+        "constant", candidate_token.item()
     ) for icl_sample in icl_samples
 ])
 
