@@ -495,12 +495,13 @@ for batch in range(n_batches):
             re_calculated_icl_probs.append(watermarked_empty_prob)
 
     # Convert list to tensor before applying tensor operations
-    candidate_probs_tensor = torch.stack(candidate_probs)
+    candidate_probs = torch.stack(candidate_probs)
 
-    # Now perform the log and sum operations
+    # Now perform the log and sum operations on the tensor
     best_candidate_idx = torch.argmax(
         torch.sum(torch.log(candidate_probs), 2), 0
     )
+
     re_calculated_best_probs.append(
         candidate_probs[best_candidate_idx, torch.arange(len(idx)), :]
     )

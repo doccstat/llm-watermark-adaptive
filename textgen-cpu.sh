@@ -10,8 +10,8 @@
 #SBATCH --partition=long,xlong
 
 #SBATCH --mem=128GB
-#SBATCH --output=/home/anthony.li/out/textgen.%j.out
-#SBATCH --error=/home/anthony.li/out/textgen.%j.err
+#SBATCH --output=/home/anthony.li/out/textgen-cpu.%j.out
+#SBATCH --error=/home/anthony.li/out/textgen-cpu.%j.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
 
