@@ -383,7 +383,8 @@ if args.method == "transform":
     pi_writer = csv.writer(pi_save, delimiter=",")
 
 attacked_samples = copy.deepcopy(watermarked_samples)
-icl_samples = copy.deepcopy(watermarked_samples)
+icl_samples = []
+icl_sample_max_length = 0
 
 pbar = tqdm(total=T)
 for itm in range(T):
@@ -393,10 +394,11 @@ for itm in range(T):
         watermarked_sample, skip_special_tokens=True)
     if args.rt_translate:
         watermarked_sample = rt_translate(watermarked_sample)
-    icl_samples[itm] = tokenizer.encode(watermarked_sample + ". What might be the prompt that generated this text? Start with the prompt directly.",
+    icl_samples.append(tokenizer.encode(watermarked_sample + ". What might be the prompt that generated this text? Start with the prompt directly.",
                                         return_tensors='pt',
                                         truncation=True,
-                                        max_length=2048)[0]
+                                        max_length=2048)[0])
+    icl_sample_max_length = max(icl_sample_max_length, len(icl_samples[-1]))
     watermarked_sample = tokenizer.encode(watermarked_sample,
                                           return_tensors='pt',
                                           truncation=True,
@@ -428,6 +430,14 @@ log_file.flush()
 log_file.close()
 attacked_tokens_save.close()
 
+# Pad the icl samples to the maximum length.
+icl_samples = torch.vstack([
+    torch.nn.functional.pad(
+        icl_sample, (0, icl_sample_max_length - len(icl_sample)),
+        "constant", candidate_token
+    ) for icl_sample in icl_samples
+])
+
 # Generate the ICL prompts for the attacked watermarked texts.
 icl_prompts = []
 pbar = tqdm(total=n_batches)
@@ -439,7 +449,7 @@ for batch in range(n_batches):
         icl_samples[idx], prompt_tokens + buffer_tokens,
         model, candidate_prompts[-1][idx]
     )
-    icl_prompts.append(null_sample[:, prompt_tokens:])
+    icl_prompts.append(null_sample[:, icl_sample_max_length:])
 
     pbar.update(1)
 pbar.close()
