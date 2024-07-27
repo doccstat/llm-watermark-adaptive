@@ -170,3 +170,4 @@ results/
 sshloginfile.txt
 detect-commands.sh
 *.tar.gz
+.DS_Store
