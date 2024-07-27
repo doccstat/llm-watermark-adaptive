@@ -7,6 +7,7 @@ generation_methods <- c("gumbel")
 attacks <- c("deletion", "insertion", "substitution")
 n <- 20
 m <- 20
+k <- 20
 attack_pcts <- c(
   "0.0", "0.05", "0.1", "0.2", "0.3"
 )
@@ -139,31 +140,79 @@ powers$Metric <-
 powers <- powers[
   order(powers$Threshold, powers$LLM, powers$GenerationMethod, powers$Metric),
 ]
-powers$LineType <- ifelse(powers$Metric == "Metric 1", "solid", "dashed")
 
-metric_subset <- paste("Metric", c(1, 3, 13, 14, 21, 22, 23))
+powers$LineType <- rep("dashed", nrow(powers))
+powers$LineType[powers$Metric %in% paste("Metric", 2:14)] <- "empty"
+powers$LineType[powers$Metric %in% paste("Metric", 15:27)] <- "best"
+powers$LineType[powers$Metric %in% paste("Metric", 28:40)] <- "icl"
 
-p <- ggplot2::ggplot() +
-  ggplot2::geom_line(
-    ggplot2::aes(x = AttackPct, y = x, color = Metric, linetype = LineType),
-    data = powers[powers$Threshold == 0.05 & powers$Metric %in% metric_subset, ]
-  ) +
-  ggplot2::facet_grid(LLM ~ GenerationMethod + Attack, scales = "free_y") +
-  ggplot2::theme_minimal() +
-  ggplot2::scale_x_continuous(labels = scales::percent) +
-  ggplot2::guides(linetype = "none")
-ggplot2::ggsave("results/powers-0.05.pdf", p, width = 10, height = 7)
+metric_subsets <- list(
+  empty = c(1, 2, 4:5, 10:12),
+  best = c(1, 15, 17:18, 23:25),
+  icl = c(1, 28, 30:31, 36:38)
+)
 
-p <- ggplot2::ggplot() +
-  ggplot2::geom_line(
-    ggplot2::aes(x = AttackPct, y = x, color = Metric, linetype = LineType),
-    data = powers[powers$Threshold == 0.01 & powers$Metric %in% metric_subset, ]
-  ) +
-  ggplot2::facet_grid(LLM ~ GenerationMethod + Attack, scales = "free_y") +
-  ggplot2::theme_minimal() +
-  ggplot2::scale_x_continuous(labels = scales::percent) +
-  ggplot2::guides(linetype = "none")
-ggplot2::ggsave("results/powers-0.01.pdf", p, width = 10, height = 7)
+for (p_value_type in names(metric_subsets)) {
+  for (threshold in c(0.05, 0.01)) {
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_line(
+        ggplot2::aes(x = AttackPct, y = x, color = Metric, linetype = LineType),
+        data = powers[
+          powers$Threshold == threshold &
+            powers$Metric %in% paste("Metric", metric_subsets[[p_value_type]]),
+        ]
+      ) +
+      ggplot2::facet_grid(LLM ~ GenerationMethod + Attack, scales = "free_y") +
+      ggplot2::theme_minimal() +
+      ggplot2::scale_x_continuous(labels = scales::percent) +
+      ggplot2::scale_linetype_manual(
+        values = c(
+          "dashed" = "dashed",
+          "empty" = "solid",
+          "best" = "solid",
+          "icl" = "solid"
+        )
+      ) +
+      ggplot2::guides(linetype = "none")
+    ggplot2::ggsave(
+      paste0(
+        "results/powers-", n, "-", m, "-", k, "-", threshold, "-", p_value_type,
+        ".pdf"
+      ),
+      p,
+      width = 10,
+      height = 7
+    )
+  }
+}
+
+plots <- list()
+for (metric_to_compare in 2:14) {
+  metric_subset <- metric_to_compare + 13 * 0:2
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_line(
+      ggplot2::aes(x = AttackPct, y = x, color = Metric, linetype = LineType),
+      data = powers[
+        powers$Threshold == threshold &
+          powers$Metric %in% paste("Metric", metric_subset),
+      ]
+    ) +
+    ggplot2::facet_grid(~ LLM + GenerationMethod + Attack, scales = "free_y") +
+    ggplot2::theme_minimal() +
+    ggplot2::scale_x_continuous(labels = scales::percent) +
+    ggplot2::scale_linetype_manual(
+      values = c(
+        "empty" = "dotted",
+        "best" = "solid",
+        "icl" = "solid"
+      )
+    ) +
+    ggplot2::guides(linetype = "none") +
+    ggplot2::theme(strip.text = ggplot2::element_blank()) +
+    ggplot2::theme(axis.title.x = ggplot2::element_blank())
+  plots[[metric_to_compare - 1]] <- p
+}
+gridExtra::grid.arrange(grobs = plots, ncol = 1)
 
 df_probs <- NULL
 for (model_prefix in models_folders_prefix) {
