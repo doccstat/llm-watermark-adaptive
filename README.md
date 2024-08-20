@@ -54,7 +54,7 @@ results directly using `Rscript analyze.R 1 3200`.
 ### Set up pyx
 
 ```shell
-python setup.py build_ext --inplace
+python 1-setup.py build_ext --inplace
 ```
 
 #### Expected running time
@@ -68,7 +68,7 @@ Less than 1 GB.
 ### (Optional) Download the pre-trained language model
 
 ```shell
-sbatch download.sh
+sbatch 2-download.sh
 ```
 
 ### Generate watermarked tokens

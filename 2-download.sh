@@ -18,4 +18,4 @@ cd /home/anthony.li/llm-watermark-adaptive
 
 export HF_HOME=/scratch/user/anthony.li/hf_cache
 
-python download.py
+python 2-download.py
