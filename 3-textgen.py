@@ -39,9 +39,9 @@ parser.add_argument('--save', default="", type=str)
 parser.add_argument('--seed', default=0, type=int)
 parser.add_argument('--batch_size', default=1, type=int)
 
-parser.add_argument('--m', default=80, type=int)
+parser.add_argument('--tokens_count', default=80, type=int)
 parser.add_argument('--k', default=0, type=int)
-parser.add_argument('--n', default=256, type=int)
+parser.add_argument('--watermark_key_length', default=256, type=int)
 parser.add_argument('--T', default=500, type=int)
 
 parser.add_argument('--prompt_tokens', default=50, type=int)
@@ -77,14 +77,16 @@ log_file.flush()
 # fix the random seed for reproducibility
 t0 = time()
 torch.manual_seed(args.seed)
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 try:
     tokenizer = AutoTokenizer.from_pretrained(
         "/scratch/user/anthony.li/models/" + args.model + "/tokenizer")
     model = AutoModelForCausalLM.from_pretrained(
-        "/scratch/user/anthony.li/models/" + args.model + "/model")
-    model = model.to(device)
+        "/scratch/user/anthony.li/models/" + args.model + "/model",
+        device_map = 'auto'
+    )
+
     log_file.write(f'Loaded the local model\n')
 except:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
@@ -118,13 +120,13 @@ def corrupt(tokens):
 T = args.T                  # number of prompts/generations
 n_batches = int(np.ceil(T / args.batch_size))  # number of batches
 prompt_tokens = args.prompt_tokens      # minimum prompt length
-new_tokens = args.m     # number of tokens to generate
+new_tokens = args.tokens_count
 buffer_tokens = args.buffer_tokens
 if args.k == 0:
-    k = args.m  # k is the block size (= number of tokens)
+    k = args.tokens_count  # k is the block size (= number of tokens)
 else:
     k = args.k
-n = args.n     # watermark key length
+n = args.watermark_key_length
 
 if args.rt_translate:
     if args.language == "french":

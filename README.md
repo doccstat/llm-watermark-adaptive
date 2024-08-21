@@ -49,7 +49,7 @@ install.packages(c("doParallel", "reshape2", "ggplot2", "fossil"))
 ## Instruction
 
 To reproduce the results, follow the instructions below or use the attached
-results directly using `Rscript analyze.R 1 3200`.
+results directly using `Rscript 5-analyze.R 1 3200`.
 
 ### Set up pyx
 
@@ -74,7 +74,7 @@ sbatch 2-download.sh
 ### Generate watermarked tokens
 
 ```shell
-sbatch textgen.sh
+sbatch 3-textgen.sh
 ```
 
 #### Expected running time
@@ -92,7 +92,7 @@ Less than 128 GB.
 ### Calculate p-values for texts
 
 ```shell
-rm -f detect-commands.sh
+rm -f 4-detect-commands.sh
 for method in gumbel; do
   for attack in deletion insertion substitution; do
     for pcts in 0.0 0.05 0.1 0.2 0.3; do
@@ -101,23 +101,13 @@ for method in gumbel; do
         mkdir -p results/$llm-$method-$attack-20-20-$pcts.p-detect
       done
       for Tindex in $(seq 0 399); do
-        echo "bash ./detect-helper.sh $method $Tindex $attack $pcts" >> detect-commands.sh
+        echo "bash ./4-detect-helper.sh $method $Tindex $attack $pcts" >> 4-detect-commands.sh
       done
     done
   done
 done
 
-previous_job_id=""
-for offset in {0..5000..1000}; do
-    if [[ -z $previous_job_id ]]; then
-        job_id=$(sbatch detect.sh -- --offset=$offset | awk '{print $4}')
-        echo "Submitted first job with ID $job_id"
-    else
-        job_id=$(sbatch --dependency=afterany:$previous_job_id detect.sh -- --offset=$offset | awk '{print $4}')
-        echo "Submitted job with ID $job_id, dependent on job $previous_job_id"
-    fi
-    previous_job_id=$job_id
-done
+sbatch 4-detect.sh
 ```
 
 #### Collect results
@@ -138,8 +128,8 @@ Less than 10 GB per compute node.
 ### Analysis
 
 ```shell
-parallel -j 8 --progress Rscript analyze.R {1} {2} ::: $(seq 1 400 2801) ::: $(seq 400 400 3200)
-Rscript analyze.R 1 3200
+parallel -j 8 --progress Rscript 5-analyze.R {1} {2} ::: $(seq 1 400 2801) ::: $(seq 400 400 3200)
+Rscript 5-analyze.R 1 3200
 ```
 
 #### Expected running time

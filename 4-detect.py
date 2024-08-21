@@ -52,7 +52,7 @@ try:
         reader = csv.reader(f)
         if len(next(reader)) == 40:
             sys.exit()
-except (FileNotFoundError, StopIteration):
+except:
     pass
 
 log_file = open(
@@ -68,6 +68,8 @@ if args.model == "facebook/opt-1.3b":
     vocab_size = 50272
 elif args.model == "openai-community/gpt2":
     vocab_size = 50257
+elif args.model == "meta-llama/Meta-Llama-3-8B":
+    vocab_size = 128256
 else:
     from transformers import AutoModelForCausalLM
     model = AutoModelForCausalLM.from_pretrained(args.model).to(
@@ -920,14 +922,15 @@ else:
     raise
 
 
-def test(tokens, seed, test_stats): return permutation_test(tokens,
-                                                            vocab_size,
-                                                            n,
-                                                            k,
-                                                            seed,
-                                                            test_stats,
-                                                            log_file,
-                                                            n_runs=args.n_runs)
+def test(tokens, seed, test_stats):
+    return permutation_test(tokens,
+                            vocab_size,
+                            n,
+                            k,
+                            seed,
+                            test_stats,
+                            log_file=log_file,
+                            n_runs=args.n_runs)
 
 
 t1 = time.time()
@@ -935,17 +938,21 @@ t1 = time.time()
 csv_saves = []
 csvWriters = []
 if args.method == "transform":
-    csv_saves.append(open(args.token_file + '/' +
-                     str(args.Tindex) + '-transform-edit.csv', 'w'))
+    csv_saves.append(open(args.token_file + '-detect/' +
+                     str(args.Tindex) + '-transform-edit.csv',
+                     'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/' +
-                     str(args.Tindex) + '-transform.csv', 'w'))
+    csv_saves.append(open(args.token_file + '-detect/' +
+                     str(args.Tindex) + '-transform.csv',
+                     'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/' +
-                     str(args.Tindex) + '-its.csv', 'w'))
+    csv_saves.append(open(args.token_file + '-detect/' +
+                     str(args.Tindex) + '-its.csv',
+        'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
-    csv_saves.append(open(args.token_file + '/' +
-                          str(args.Tindex) + '-itsl.csv', 'w'))
+    csv_saves.append(open(args.token_file + '-detect/' +
+                          str(args.Tindex) + '-itsl.csv',
+                          'w'))
     csvWriters.append(csv.writer(csv_saves[-1], delimiter=','))
 elif args.method == "gumbel":
     csv_saves.append(open(args.token_file + '-detect/watermarked-' +
