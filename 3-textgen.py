@@ -86,7 +86,7 @@ try:
         "/scratch/user/anthony.li/models/" + args.model + "/tokenizer")
     model = AutoModelForCausalLM.from_pretrained(
         "/scratch/user/anthony.li/models/" + args.model + "/model",
-        device_map = 'auto'
+        device_map='auto'
     )
 
     log_file.write(f'Loaded the local model\n')
@@ -451,12 +451,12 @@ log_file.close()
 attacked_tokens_save.close()
 
 # Pad the icl samples to the maximum length.
-icl_prompts = torch.vstack([
+icl_prompts = [
     torch.nn.functional.pad(
         icl_sample, (0, icl_prompt_max_length - len(icl_sample)),
         "constant", candidate_token.item()
     ) for icl_sample in icl_prompts
-])
+]
 
 # # Generate the ICL prompts for the attacked watermarked texts.
 # icl_prompts = []
