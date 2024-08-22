@@ -120,14 +120,22 @@ Less than 128 GB.
 
 ```shell
 rm -f 4-detect-commands.sh
-for method in gumbel; do
-  for attack in deletion insertion substitution; do
-    for pcts in 0.0 0.05 0.1 0.2 0.3; do
-      for model_prefix in opt gpt ml3; do
-        rm -rf results/$model_prefix-$method-$attack-20-20-$pcts.p-detect
-        mkdir -p results/$model_prefix-$method-$attack-20-20-$pcts.p-detect
-        for Tindex in $(seq 0 399); do
-          echo "bash ./4-detect-helper.sh $model_prefix $method $Tindex $attack $pcts" >> 4-detect-commands.sh
+for watermark_key_length in 20 50 80 100 500 1000; do
+  if [ $watermark_key_length -le 100 ]; then
+    tokens_count=$watermark_key_length
+  else
+    tokens_count=100
+  fi
+
+  for method in gumbel; do
+    for attack in deletion insertion substitution; do
+      for pcts in 0.0 0.05 0.1 0.2 0.3; do
+        for model_prefix in ml3 mt7; do
+          rm -rf results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p-detect
+          mkdir -p results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p-detect
+          for Tindex in $(seq 0 99); do
+            echo "bash ./4-detect-helper.sh $model_prefix $method $Tindex $attack $pcts" >> 4-detect-commands.sh
+          done
         done
       done
     done
