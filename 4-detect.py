@@ -60,6 +60,8 @@ elif args.model == "openai-community/gpt2":
     vocab_size = 50257
 elif args.model == "meta-llama/Meta-Llama-3-8B":
     vocab_size = 128256
+elif args.model == "mistralai/Mistral-7B-v0.1":
+    vocab_size = 32000
 else:
     from transformers import AutoModelForCausalLM
     model = AutoModelForCausalLM.from_pretrained(args.model).to(
