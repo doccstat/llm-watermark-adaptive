@@ -74,6 +74,32 @@ sbatch 2-download.sh
 ### Generate watermarked tokens
 
 ```shell
+rm -f 3-textgen-commands.sh
+for watermark_key_length in 20 50 80 100 500 1000; do
+  # Set tokens_count based on watermark_key_length
+  if [ $watermark_key_length -le 100 ]; then
+    tokens_count=$watermark_key_length
+  else
+    tokens_count=100
+  fi
+
+  for method in gumbel; do
+    for attack in deletion insertion substitution; do
+      for pcts in 0.0 0.05 0.1 0.2 0.3; do
+        for model_prefix in ml3 mt7; do
+          if [ "$model_prefix" = "ml3" ]; then
+            model="meta-llama/Meta-Llama-3-8B"
+          else
+            model="mistralai/Mistral-7B-v0.1"
+          fi
+
+          echo "python 3-textgen.py --save results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 100 --tokens_count $tokens_count --buffer_tokens 0 --model $model --seed 1 --T 100 --method $method --${attack} $pcts --candidate_prompt_max 10" >> 3-textgen-commands.sh
+        done
+      done
+    done
+  done
+done
+
 sbatch 3-textgen.sh
 ```
 

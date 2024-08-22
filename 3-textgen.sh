@@ -1,7 +1,6 @@
 #!/bin/bash
 
 #SBATCH --job-name=textgen
-#SBATCH --nodes=1
 #SBATCH --ntasks=64
 #SBATCH --ntasks-per-node=64
 #SBATCH --cpus-per-task=1
@@ -15,7 +14,7 @@
 #SBATCH --error=/home/anthony.li/out/textgen.%A.%a.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
-#SBATCH --array=1-3
+#SBATCH --array=1-180
 
 module purge
 module load Python/3.11.5-GCCcore-13.2.0
@@ -32,26 +31,30 @@ export PATH="/home/anthony.li/.local/bin:$PATH"
 export PYTHONPATH=".":$PYTHONPATH
 export HF_HOME=/scratch/user/anthony.li/hf_cache
 
-# Define attack values for each array task
-declare -a attacks=("deletion" "insertion" "substitution")
+# Determine the total number of commands by counting lines in 3-textgen-commands.sh
+total_commands=180
+total_jobs=180
 
-# Fetches the correct attack type based on SLURM_ARRAY_TASK_ID
-attack=${attacks[$SLURM_ARRAY_TASK_ID-1]}
+# Calculate the number of commands per job (minimum)
+commands_per_job=$((total_commands / total_jobs))
 
-for watermark_key_length in 20 50 80 100 500 1000; do
-  # Set tokens_count based on watermark_key_length
-  if [ $watermark_key_length -le 100 ]; then
-    tokens_count=$watermark_key_length
-  else
-    tokens_count=100
-  fi
+# Calculate the number of jobs that need to process an extra command
+extra_commands=$((total_commands % total_jobs))
 
-  for method in gumbel; do
-    for pcts in 0.0 0.05 0.1 0.2 0.3; do
-      # python 3-textgen.py --save results/gpt-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 100 --tokens_count $tokens_count --buffer_tokens 0 --model openai-community/gpt2 --seed 1 --T 100 --method $method --${attack} $pcts --candidate_prompt_max 10
-      # python 3-textgen.py --save results/opt-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 100 --tokens_count $tokens_count --buffer_tokens 0 --model facebook/opt-1.3b --seed 1 --T 100 --method $method --${attack} $pcts --candidate_prompt_max 10
-      python 3-textgen.py --save results/mt7-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 100 --tokens_count $tokens_count --buffer_tokens 0 --model mistralai/Mistral-7B-v0.1 --seed 1 --T 100 --method $method --${attack} $pcts --candidate_prompt_max 10
-      python 3-textgen.py --save results/ml3-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 100 --tokens_count $tokens_count --buffer_tokens 0 --model meta-llama/Meta-Llama-3-8B --seed 1 --T 100 --method $method --${attack} $pcts --candidate_prompt_max 10
-    done
-  done
+# Determine the start and end command index for this particular job
+if [ ${SLURM_ARRAY_TASK_ID} -le $extra_commands ]; then
+    start_command=$(( (${SLURM_ARRAY_TASK_ID} - 1) * (commands_per_job + 1) + 1 ))
+    end_command=$(( ${SLURM_ARRAY_TASK_ID} * (commands_per_job + 1) ))
+else
+    start_command=$(( extra_commands * (commands_per_job + 1) + (${SLURM_ARRAY_TASK_ID} - extra_commands - 1) * commands_per_job + 1 ))
+    end_command=$(( extra_commands * (commands_per_job + 1) + (${SLURM_ARRAY_TASK_ID} - extra_commands) * commands_per_job ))
+fi
+
+echo "Running tasks for commands from $start_command to $end_command"
+
+# Loop over the designated commands for this job
+for i in $(seq $start_command $end_command); do
+    command=$(sed -n "${i}p" 3-textgen-commands.sh)
+    echo "Executing command $i: $command"
+    eval "$command"
 done
