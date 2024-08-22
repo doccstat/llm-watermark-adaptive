@@ -212,7 +212,18 @@ for (metric_to_compare in 2:14) {
     ggplot2::theme(axis.title.x = ggplot2::element_blank())
   plots[[metric_to_compare - 1]] <- p
 }
-gridExtra::grid.arrange(grobs = plots, ncol = 1)
+p <- gridExtra::grid.arrange(grobs = plots, ncol = 1)
+ggplot2::ggsave(
+  paste0(
+    "results/powers-", n, "-", m, "-", k, "-", threshold, "-comparison",
+    ".pdf"
+  ),
+  p,
+  width = 20,
+  height = 30
+)
+
+################################################################################
 
 df_probs <- NULL
 for (model_prefix in models_folders_prefix) {
