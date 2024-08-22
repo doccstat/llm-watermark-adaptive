@@ -270,6 +270,8 @@ elif args.model == "openai-community/gpt2":
     candidate_prompt = " "
 elif args.model == "meta-llama/Meta-Llama-3-8B":
     candidate_prompt = ""
+elif args.model == "mistralai/Mistral-7B-v0.1":
+    candidate_prompt = ""
 else:
     raise
 candidate_token = tokenizer.encode(
