@@ -14,6 +14,8 @@ elif [ "$model_prefix" == "gpt" ]; then
     model="openai-community/gpt2"
 elif [ "$model_prefix" == "ml3" ]; then
     model="meta-llama/Meta-Llama-3-8B"
+elif [ "$model_prefix" == "mt7" ]; then
+    model="mistralai/Mistral-7B-v0.1"
 else
     echo "Invalid model prefix"
     exit 1
