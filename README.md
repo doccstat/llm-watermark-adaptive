@@ -101,6 +101,7 @@ for watermark_key_length in 20 50 80 100 500 1000; do
 done
 
 sbatch 3-textgen.sh
+# sacct -j <jobid> --format=JobID,JobName,State,ExitCode
 ```
 
 #### Expected running time

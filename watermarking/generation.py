@@ -1,4 +1,5 @@
 import torch
+from openai import OpenAI
 
 
 def generate(
@@ -165,3 +166,19 @@ def generate_rnd(prompts, m, model, empty_prompts):
         sampling_probs.detach().cpu(),
         empty_sampling_probs.detach().cpu()
     )
+
+
+def gpt_prompt(text: str, key: str) -> str:
+    client = OpenAI(api_key=key)
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "What might be the prompt used to generate the provided text? Start with the prompt directly."},
+                {"role": "user", "content": text},
+            ],
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return str(e)

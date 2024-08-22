@@ -14,7 +14,7 @@ import copy
 
 import numpy as np
 
-from watermarking.generation import generate, generate_rnd
+from watermarking.generation import generate, generate_rnd, gpt_prompt
 from watermarking.attacks import deletion_attack, insertion_attack, substitution_attack
 
 from watermarking.transform.sampler import transform_sampling
@@ -55,6 +55,8 @@ parser.add_argument('--gamma', default=0.4, type=float)
 parser.add_argument('--deletion', default=0.0, type=float)
 parser.add_argument('--insertion', default=0.0, type=float)
 parser.add_argument('--substitution', default=0.0, type=float)
+
+parser.add_argument('--gpt_prompt_key', default='', type=str)
 
 parser.add_argument('--kirch_gamma', default=0.25, type=float)
 parser.add_argument('--kirch_delta', default=1.0, type=float)
@@ -393,8 +395,9 @@ if args.method == "transform":
     pi_writer = csv.writer(pi_save, delimiter=",")
 
 attacked_samples = copy.deepcopy(watermarked_samples)
-icl_samples = []
-icl_sample_max_length = 0
+# icl_samples = []
+icl_prompts = []
+icl_prompt_max_length = 0
 
 pbar = tqdm(total=T)
 for itm in range(T):
@@ -404,11 +407,18 @@ for itm in range(T):
         watermarked_sample, skip_special_tokens=True)
     if args.rt_translate:
         watermarked_sample = rt_translate(watermarked_sample)
-    icl_samples.append(tokenizer.encode(watermarked_sample + ". What might be the prompt that generated this text? Start with the prompt directly.",
+    icl_prompt = gpt_prompt(
+        watermarked_sample, args.gpt_prompt_key
+    ) if args.gpt_prompt_key else watermarked_sample
+    icl_prompts.append(tokenizer.encode(icl_prompt,
                                         return_tensors='pt',
                                         truncation=True,
                                         max_length=2048)[0])
-    icl_sample_max_length = max(icl_sample_max_length, len(icl_samples[-1]))
+    # icl_samples.append(tokenizer.encode(watermarked_sample + ". What might be the prompt that generated this text? Start with the prompt directly.",
+    #                                     return_tensors='pt',
+    #                                     truncation=True,
+    #                                     max_length=2048)[0])
+    icl_prompt_max_length = max(icl_prompt_max_length, len(icl_prompts[-1]))
     watermarked_sample = tokenizer.encode(watermarked_sample,
                                           return_tensors='pt',
                                           truncation=True,
@@ -441,28 +451,28 @@ log_file.close()
 attacked_tokens_save.close()
 
 # Pad the icl samples to the maximum length.
-icl_samples = torch.vstack([
+icl_prompts = torch.vstack([
     torch.nn.functional.pad(
-        icl_sample, (0, icl_sample_max_length - len(icl_sample)),
+        icl_sample, (0, icl_prompt_max_length - len(icl_sample)),
         "constant", candidate_token.item()
-    ) for icl_sample in icl_samples
+    ) for icl_sample in icl_prompts
 ])
 
-# Generate the ICL prompts for the attacked watermarked texts.
-icl_prompts = []
-pbar = tqdm(total=n_batches)
-for batch in range(n_batches):
-    idx = torch.arange(batch * args.batch_size,
-                       min(T, (batch + 1) * args.batch_size))
+# # Generate the ICL prompts for the attacked watermarked texts.
+# icl_prompts = []
+# pbar = tqdm(total=n_batches)
+# for batch in range(n_batches):
+#     idx = torch.arange(batch * args.batch_size,
+#                        min(T, (batch + 1) * args.batch_size))
 
-    null_sample, _, _ = generate_rnd(
-        icl_samples[idx], prompt_tokens + buffer_tokens,
-        model, candidate_prompts[-1][idx]
-    )
-    icl_prompts.append(null_sample[:, icl_sample_max_length:])
+#     null_sample, _, _ = generate_rnd(
+#         icl_samples[idx], prompt_tokens + buffer_tokens,
+#         model, candidate_prompts[-1][idx]
+#     )
+#     icl_prompts.append(null_sample[:, icl_sample_max_length:])
 
-    pbar.update(1)
-pbar.close()
+#     pbar.update(1)
+# pbar.close()
 candidate_prompts.append(torch.vstack(icl_prompts))
 
 re_calculated_best_probs = []
