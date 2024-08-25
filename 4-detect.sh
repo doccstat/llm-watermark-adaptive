@@ -20,6 +20,7 @@ cd /home/anthony.li/llm-watermark-adaptive
 echo "Starting job with ID ${SLURM_JOB_ID} on ${SLURM_JOB_NODELIST}"
 
 export HF_HOME=/scratch/user/anthony.li/hf_cache
+export PYTHONPATH=".":$PYTHONPATH
 
 # Determine the total number of commands by counting lines in 4-detect-commands.sh
 total_commands=$(wc -l < 4-detect-commands.sh)
