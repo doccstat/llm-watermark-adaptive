@@ -130,17 +130,10 @@ for watermark_key_length in 20 50 80 100 500 1000; do
     for attack in deletion insertion substitution; do
       for pcts in 0.0 0.05 0.1 0.2 0.3; do
         for model_prefix in ml3 mt7; do
-          if [ "$model_prefix" = "opt" ]; then
-              model="facebook/opt-1.3b"
-          elif [ "$model_prefix" = "gpt" ]; then
-              model="openai-community/gpt2"
-          elif [ "$model_prefix" = "ml3" ]; then
-              model="meta-llama/Meta-Llama-3-8B"
-          elif [ "$model_prefix" = "mt7" ]; then
-              model="mistralai/Mistral-7B-v0.1"
+          if [ "$model_prefix" = "ml3" ]; then
+            model="meta-llama/Meta-Llama-3-8B"
           else
-              echo "Invalid model prefix"
-              exit 1
+            model="mistralai/Mistral-7B-v0.1"
           fi
 
           rm -rf results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p-detect
