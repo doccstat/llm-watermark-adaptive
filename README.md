@@ -92,7 +92,7 @@ for watermark_key_length in 20 50 100 500 1000; do
             model="mistralai/Mistral-7B-v0.1"
           fi
 
-          echo "python 3-textgen.py --save results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 150 --tokens_count $tokens_count --buffer_tokens 0 --model $model --seed 1 --T 300 --method $method --${attack} $pcts --candidate_prompt_max 20" >> 3-textgen-commands.sh
+          echo "python 3-textgen.py --save results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 125 --tokens_count $tokens_count --buffer_tokens 0 --model $model --seed 1 --T 250 --method $method --${attack} $pcts --candidate_prompt_max 10 --gpt_prompt_key ''" >> 3-textgen-commands.sh
         done
       done
     done
