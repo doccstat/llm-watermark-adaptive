@@ -76,7 +76,6 @@ sbatch 2-download.sh
 ```shell
 rm -f 3-textgen-commands.sh
 for watermark_key_length in 20 50 80 100 500 1000; do
-  # Set tokens_count based on watermark_key_length
   if [ $watermark_key_length -le 100 ]; then
     tokens_count=$watermark_key_length
   else
@@ -93,7 +92,7 @@ for watermark_key_length in 20 50 80 100 500 1000; do
             model="mistralai/Mistral-7B-v0.1"
           fi
 
-          echo "python 3-textgen.py --save results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 100 --tokens_count $tokens_count --buffer_tokens 0 --model $model --seed 1 --T 100 --method $method --${attack} $pcts --candidate_prompt_max 10" >> 3-textgen-commands.sh
+          echo "python 3-textgen.py --save results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 400 --tokens_count $tokens_count --buffer_tokens 0 --model $model --seed 1 --T 400 --method $method --${attack} $pcts --candidate_prompt_max 10" >> 3-textgen-commands.sh
         done
       done
     done
