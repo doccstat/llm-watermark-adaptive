@@ -453,10 +453,16 @@ attacked_tokens_save.close()
 # Pad the icl samples to the maximum length.
 icl_prompts = [
     torch.nn.functional.pad(
-        icl_sample, (0, icl_prompt_max_length - len(icl_sample)),
+        icl_prompt, (0, icl_prompt_max_length - len(icl_prompt)),
         "constant", candidate_token.item()
-    ) for icl_sample in icl_prompts
+    ) for icl_prompt in icl_prompts
 ]
+
+icl_prompt_save = open(args.save + '-icl-prompt.csv', 'w')
+icl_prompt_writer = csv.writer(icl_prompt_save, delimiter=",")
+for icl_prompt in icl_prompts:
+    icl_prompt_writer.writerow(np.asarray(icl_prompt.numpy()))
+icl_prompt_save.close()
 
 # # Generate the ICL prompts for the attacked watermarked texts.
 # icl_prompts = []

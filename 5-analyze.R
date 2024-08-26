@@ -1,8 +1,8 @@
 set.seed(1)
 
 folder <- "results/"
-models <- c("facebook/opt-1.3b", "openai-community/gpt2")
-models_folders_prefix <- c("opt", "gpt")
+models <- c("meta-llama/Meta-Llama-3-8B", "mistralai/Mistral-7B-v0.1")
+models_folders_prefix <- c("ml3", "mt7")
 generation_methods <- c("gumbel")
 attacks <- c("deletion", "insertion", "substitution")
 n <- 20
@@ -42,7 +42,7 @@ for (model_index in seq_along(models)) {  # nolint
   }
 }
 
-prompt_count <- 400
+prompt_count <- 100
 df <- matrix(NA, 0, 5 + 5)
 
 filename <- sub("XXX", 0, paste0(pvalue_files_templates[1, ], collapse = ""))
@@ -142,14 +142,23 @@ powers <- powers[
 ]
 
 powers$LineType <- rep("dashed", nrow(powers))
-powers$LineType[powers$Metric %in% paste("Metric", 2:14)] <- "empty"
-powers$LineType[powers$Metric %in% paste("Metric", 15:27)] <- "best"
-powers$LineType[powers$Metric %in% paste("Metric", 28:40)] <- "icl"
+powers$LineType[powers$Metric == "Metric 2"] <- "theoretical"
+powers$LineType[powers$Metric %in% paste("Metric", 2 + seq_len(13))] <- "empty"
+powers$LineType[powers$Metric %in% paste("Metric", 15 + seq_len(13))] <- "best"
+powers$LineType[powers$Metric %in% paste("Metric", 28 + seq_len(13))] <- "icl"
+
+# matrix(powers[
+#   powers$Attack == "substitution" &
+#     powers$GenerationMethod == "gumbel" &
+#     powers$Threshold == 0.05 &
+#     powers$LLM == "ml3",
+#   "x"
+# ], ncol = 5, byrow = TRUE)
 
 metric_subsets <- list(
-  empty = c(1, 2, 4:5, 10:12),
-  best = c(1, 15, 17:18, 23:25),
-  icl = c(1, 28, 30:31, 36:38)
+  empty = c(1, 3, 5:6, 11:13),
+  best = c(1, 16, 18:19, 24:26),
+  icl = c(1, 29, 31:32, 37:39)
 )
 
 for (p_value_type in names(metric_subsets)) {
