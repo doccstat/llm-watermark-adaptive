@@ -1,20 +1,20 @@
 #!/bin/bash
 
 #SBATCH --job-name=textgen
-#SBATCH --ntasks=64
-#SBATCH --ntasks-per-node=64
+#SBATCH --ntasks=128
+#SBATCH --ntasks-per-node=128
 #SBATCH --cpus-per-task=1
 
 #SBATCH --time=1-00:00:00
 #SBATCH --partition=gpu,xgpu
 #SBATCH --gres=gpu:a30:2
 
-#SBATCH --mem=64GB
+#SBATCH --mem=128GB
 #SBATCH --output=/home/anthony.li/out/textgen.%A.%a.out
 #SBATCH --error=/home/anthony.li/out/textgen.%A.%a.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
-#SBATCH --array=1-150%3
+#SBATCH --array=1-150%2
 
 module purge
 module load Python/3.11.5-GCCcore-13.2.0
