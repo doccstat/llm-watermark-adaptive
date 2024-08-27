@@ -5,8 +5,13 @@ models <- c("meta-llama/Meta-Llama-3-8B", "mistralai/Mistral-7B-v0.1")
 models_folders_prefix <- c("ml3", "mt7")
 generation_methods <- c("gumbel")
 attacks <- c("deletion", "insertion", "substitution")
-n <- 20
-m <- 20
+watermark_key_token_pairs <- matrix(c(
+  20, 20,
+  50, 50,
+  100, 100,
+  500, 100,
+  1000, 100
+), ncol = 2, byrow = TRUE)
 k <- 20
 attack_pcts <- c(
   "0.0", "0.05", "0.1", "0.2", "0.3"
@@ -14,28 +19,32 @@ attack_pcts <- c(
 watermarked_or_null <- c("watermarked")
 
 pvalue_files_templates <- matrix(NA, 0, 15)
-for (model_index in seq_along(models)) {  # nolint
-  for (generation_methods_index in seq_along(generation_methods)) {
-    for (attack_index in seq_along(attacks)) {
-      for (attack_pcts_index in seq_along(attack_pcts)) {
-        for (watermarked_or_null_index in seq_along(watermarked_or_null)) {
-          pvalue_files_templates <- rbind(pvalue_files_templates, c(
-            folder,
-            models_folders_prefix[model_index],
-            "-",
-            generation_methods[generation_methods_index],
-            "-",
-            attacks[attack_index],
-            "-",
-            n,
-            "-",
-            m,
-            "-",
-            attack_pcts[attack_pcts_index],
-            ".p-detect/",
-            watermarked_or_null[watermarked_or_null_index],
-            "-XXX.csv"
-          ))
+for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) {  # nolint
+  watermark_key_length <- watermark_key_token_pairs[wkt_index, 1]
+  tokens_count <- watermark_key_token_pairs[wkt_index, 2]
+  for (model_index in seq_along(models)) {
+    for (generation_methods_index in seq_along(generation_methods)) {
+      for (attack_index in seq_along(attacks)) {
+        for (attack_pcts_index in seq_along(attack_pcts)) {
+          for (watermarked_or_null_index in seq_along(watermarked_or_null)) {
+            pvalue_files_templates <- rbind(pvalue_files_templates, c(
+              folder,
+              models_folders_prefix[model_index],
+              "-",
+              generation_methods[generation_methods_index],
+              "-",
+              attacks[attack_index],
+              "-",
+              watermark_key_length,
+              "-",
+              tokens_count,
+              "-",
+              attack_pcts[attack_pcts_index],
+              ".p-detect/",
+              watermarked_or_null[watermarked_or_null_index],
+              "-XXX.csv"
+            ))
+          }
         }
       }
     }
@@ -43,26 +52,55 @@ for (model_index in seq_along(models)) {  # nolint
 }
 
 prompt_count <- 100
-df <- matrix(NA, 0, 5 + 5)
-
+dfs <- list()
 filename <- sub("XXX", 0, paste0(pvalue_files_templates[1, ], collapse = ""))
 metric_count <- ncol(read.csv(filename, header = FALSE))
 
+clusters <- parallel::makeCluster(parallel::detectCores() - 1)
+doParallel::registerDoParallel(clusters)
 for (template_index in seq_len(nrow(pvalue_files_templates))) {
   print(paste("Processing", template_index, "of", nrow(pvalue_files_templates)))
-  probs <- read.csv(
-    paste0(
+  probs <- tryCatch(
+    read.csv(
       paste0(
-        pvalue_files_templates[template_index, seq_len(12)], collapse = ""
-      ), ".p-probs.csv"
-    ), header = FALSE
+        paste0(
+          pvalue_files_templates[template_index, seq_len(12)], collapse = ""
+        ), ".p-probs.csv"
+      ), header = FALSE
+    ),
+    error = function(e) {
+      matrix(
+        NA, prompt_count, as.numeric(pvalue_files_templates[template_index, 10])
+      )
+    }
   )
-  empty_probs <- read.csv(
-    paste0(
+  empty_probs <- tryCatch(
+    read.csv(
       paste0(
-        pvalue_files_templates[template_index, seq_len(12)], collapse = ""
-      ), ".p-empty-probs.csv"
-    ), header = FALSE
+        paste0(
+          pvalue_files_templates[template_index, seq_len(12)], collapse = ""
+        ), ".p-empty-probs.csv"
+      ), header = FALSE
+    ),
+    error = function(e) {
+      matrix(
+        NA, prompt_count, as.numeric(pvalue_files_templates[template_index, 10])
+      )
+    }
+  )
+  pvalues_matrix <- foreach::`%dopar%`(
+    foreach::foreach(prompt_index = seq_len(prompt_count), .combine = "cbind"),
+    {
+      filename <- sub(
+        "XXX",
+        prompt_index - 1,
+        paste0(pvalue_files_templates[template_index, ], collapse = "")
+      )
+      matrix(tryCatch(
+        read.csv(filename, header = FALSE),
+        error = function(e) rep(NA, metric_count)
+      ))
+    }
   )
   for (prompt_index in seq_len(prompt_count)) {
     # Python index in the file name
@@ -71,38 +109,155 @@ for (template_index in seq_len(nrow(pvalue_files_templates))) {
       prompt_index - 1,
       paste0(pvalue_files_templates[template_index, ], collapse = "")
     )
-    df <- rbind(
-      df,
-      cbind(
-        pvalue_files_templates[template_index, 2],
-        pvalue_files_templates[template_index, 4],
-        pvalue_files_templates[template_index, 6],
-        pvalue_files_templates[template_index, 12],
-        prompt_index,
-        paste("Metric", seq_len(metric_count)),
-        matrix(tryCatch(
-          read.csv(filename, header = FALSE),
-          error = function(e) rep(NA, metric_count)
-        )),
-        sum(abs(probs[prompt_index, ] - empty_probs[prompt_index, ])),
-        sqrt(sum((probs[prompt_index, ] - empty_probs[prompt_index, ])^2)),
-        max(abs(probs[prompt_index, ] - empty_probs[prompt_index, ]))
-      )
+    dfs[[prompt_count * (template_index - 1) + prompt_index]] <- cbind(
+      pvalue_files_templates[template_index, 2],
+      pvalue_files_templates[template_index, 4],
+      pvalue_files_templates[template_index, 6],
+      pvalue_files_templates[template_index, 8],
+      pvalue_files_templates[template_index, 10],
+      pvalue_files_templates[template_index, 12],
+      prompt_index,
+      seq_len(metric_count),
+      pvalues_matrix[, prompt_index],
+      sum(abs(probs[prompt_index, ] - empty_probs[prompt_index, ])),
+      sqrt(sum((probs[prompt_index, ] - empty_probs[prompt_index, ])^2)),
+      max(abs(probs[prompt_index, ] - empty_probs[prompt_index, ]))
     )
   }
 }
+parallel::stopCluster(clusters)
 
+df <- do.call(rbind, dfs)
 df <- data.frame(df)
 names(df) <- c(
-  "LLM", "GenerationMethod", "Attack", "AttackPct", "PromptIndex", "Metric",
-  "PValue", "ProbsErrorL1Norm", "ProbsErrorL2Norm", "ProbsErrorInfNorm"
+  "LLM", "GenerationMethod", "Attack", "WatermarkKeyLength", "TokensCount",
+  "AttackPct", "PromptIndex", "Metric", "PValue",
+  "ProbsErrorL1Norm", "ProbsErrorL2Norm", "ProbsErrorInfNorm"
 )
-df <- as.data.frame(lapply(df, unlist))
+df <- as.data.frame(lapply(df, unlist))  # nolint
+df$LLM <- as.character(df$LLM)
 df$AttackPct <- as.numeric(df$AttackPct)
+df$WatermarkKeyLength <- as.numeric(df$WatermarkKeyLength)
+df$TokensCount <- as.numeric(df$TokensCount)
+df$PromptIndex <- as.numeric(df$PromptIndex)
+df$Metric <- as.factor(df$Metric)
 df$PValue <- as.numeric(df$PValue)
 df$ProbsErrorL1Norm <- as.numeric(df$ProbsErrorL1Norm)
 df$ProbsErrorL2Norm <- as.numeric(df$ProbsErrorL2Norm)
 df$ProbsErrorInfNorm <- as.numeric(df$ProbsErrorInfNorm)
+
+################################################################################
+
+theoretical_df <- data.frame(df[
+  df$GenerationMethod == "gumbel" &
+    df$Attack == "substitution" &
+    df$AttackPct == 0,
+  c(
+    "LLM", "WatermarkKeyLength", "TokensCount",
+    "PromptIndex", "Metric", "PValue"
+  )
+])
+theoretical_df_power <- aggregate(
+  theoretical_df$PValue <= 0.05,
+  by = list(
+    LLM = theoretical_df$LLM,
+    WatermarkKeyLength = theoretical_df$WatermarkKeyLength,
+    TokensCount = theoretical_df$TokensCount,
+    Metric = theoretical_df$Metric
+  ),
+  FUN = function(x) mean(x, na.rm = TRUE)
+)
+theoretical_df_power_i <- theoretical_df_power[
+  theoretical_df_power$Metric %in% c(
+    1:3, 5:6, 11:13, 16, 18:19, 24:26, 29, 31:32, 37:39
+  ),
+]
+theoretical_df_power_i$label_x <- prompt_count + 3
+for (llm in unique(theoretical_df_power_i$LLM)) {
+  for (wkl in unique(theoretical_df_power_i$WatermarkKeyLength)) {
+    facet_df <- theoretical_df_power_i[
+      theoretical_df_power_i$LLM == llm &
+        theoretical_df_power_i$WatermarkKeyLength == wkl,
+    ]
+    facet_df <- facet_df[order(facet_df$x, decreasing = TRUE), ]
+    y_i_offset <- 0
+    last_first <- 1
+    for (y_i in seq_len(nrow(facet_df))) {
+      if (
+        y_i > 1 &&
+          !is.na(facet_df[last_first, "x"]) &&
+          !is.na(facet_df[y_i, "x"]) &&
+          facet_df[last_first, "x"] - facet_df[y_i, "x"] > 0.05
+      ) {
+        y_i_offset <- y_i - 1
+        last_first <- y_i
+      }
+      theoretical_df_power_i[
+        theoretical_df_power_i$LLM == llm &
+          theoretical_df_power_i$WatermarkKeyLength == wkl &
+          theoretical_df_power_i$Metric == facet_df[y_i, "Metric"],
+        "label_x"
+      ] <- prompt_count + 5 + 12 * ((y_i - y_i_offset - 1) %% 5)
+    }
+  }
+}
+theoretical_df_power_ni <- theoretical_df_power[
+  !(theoretical_df_power$Metric %in% c(
+    1:3, 5:6, 11:13, 16, 18:19, 24:26, 29, 31:32, 37:39
+  )),
+]
+
+p <- ggplot2::ggplot(
+  theoretical_df,
+  ggplot2::aes(x = PromptIndex, y = PValue, color = Metric)
+) +
+  ggplot2::geom_point(alpha = 0.025) +
+  ggplot2::geom_segment(
+    data = theoretical_df_power_i,
+    ggplot2::aes(
+      x = 0,
+      xend = prompt_count,
+      y = x,
+      yend = x,
+      color = Metric
+    )
+  ) +
+  ggplot2::geom_segment(
+    data = theoretical_df_power_ni,
+    ggplot2::aes(
+      x = 0,
+      xend = prompt_count,
+      y = x,
+      yend = x,
+      color = Metric
+    ),
+    alpha = 0.2
+  ) +
+  ggplot2::geom_text(
+    data = theoretical_df_power_i,
+    ggplot2::aes(label = Metric, x = label_x, y = x),
+    size = 2.8
+  ) +
+  ggplot2::annotate(
+    "segment",
+    x = 0,
+    xend = prompt_count,
+    y = 0.05,
+    yend = 0.05,
+    color = "black",
+    linetype = "dashed",
+    alpha = 0.5
+  ) +
+  ggplot2::scale_x_continuous(
+    breaks = c(0, 50, 100),
+    labels = c(0, 50, 100)
+  ) +
+  ggplot2::facet_grid(LLM ~ WatermarkKeyLength) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = "none")
+ggplot2::ggsave("results/theoretical.pdf", p, width = 12, height = 6)
+
+################################################################################
 
 powers <- rbind(
   cbind(
@@ -185,7 +340,16 @@ for (p_value_type in names(metric_subsets)) {
       ggplot2::guides(linetype = "none")
     ggplot2::ggsave(
       paste0(
-        "results/powers-", n, "-", m, "-", k, "-", threshold, "-", p_value_type,
+        "results/powers-",
+        watermark_key_length,
+        "-",
+        tokens_count,
+        "-",
+        k,
+        "-",
+        threshold,
+        "-",
+        p_value_type,
         ".pdf"
       ),
       p,
@@ -224,7 +388,15 @@ for (metric_to_compare in 2:14) {
 p <- gridExtra::grid.arrange(grobs = plots, ncol = 1)
 ggplot2::ggsave(
   paste0(
-    "results/powers-", n, "-", m, "-", k, "-", threshold, "-comparison",
+    "results/powers-",
+    watermark_key_length,
+    "-",
+    tokens_count,
+    "-",
+    k,
+    "-",
+    threshold,
+    "-comparison",
     ".pdf"
   ),
   p,
