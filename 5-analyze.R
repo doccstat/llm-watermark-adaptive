@@ -6,13 +6,13 @@ models_folders_prefix <- c("ml3", "mt7")
 generation_methods <- c("gumbel")
 attacks <- c("deletion", "insertion", "substitution")
 watermark_key_token_pairs <- matrix(c(
+  10, 10,
   20, 20,
+  30, 30,
+  40, 40,
   50, 50,
-  100, 100,
-  500, 100,
-  1000, 100
+  100, 100
 ), ncol = 2, byrow = TRUE)
-k <- 20
 attack_pcts <- c(
   "0.0", "0.05", "0.1", "0.2", "0.3"
 )
@@ -173,7 +173,7 @@ theoretical_df_power_i <- theoretical_df_power[
   ),
 ]
 theoretical_df_power_i$label_x <- prompt_count + 3
-for (llm in unique(theoretical_df_power_i$LLM)) {
+for (llm in unique(theoretical_df_power_i$LLM)) {  # nolint
   for (wkl in unique(theoretical_df_power_i$WatermarkKeyLength)) {
     facet_df <- theoretical_df_power_i[
       theoretical_df_power_i$LLM == llm &
@@ -268,6 +268,8 @@ powers <- rbind(
         LLM = df$LLM,
         GenerationMethod = df$GenerationMethod,
         Attack = df$Attack,
+        WatermarkKeyLength = df$WatermarkKeyLength,
+        TokensCount = df$TokensCount,
         AttackPct = df$AttackPct,
         Metric = df$Metric
       ),
@@ -282,6 +284,8 @@ powers <- rbind(
         LLM = df$LLM,
         GenerationMethod = df$GenerationMethod,
         Attack = df$Attack,
+        WatermarkKeyLength = df$WatermarkKeyLength,
+        TokensCount = df$TokensCount,
         AttackPct = df$AttackPct,
         Metric = df$Metric
       ),
@@ -290,25 +294,31 @@ powers <- rbind(
   )
 )
 powers <- data.frame(powers)
-powers$Metric <-
-  factor(powers$Metric, levels = paste("Metric", seq_len(metric_count)))
-powers <- powers[
-  order(powers$Threshold, powers$LLM, powers$GenerationMethod, powers$Metric),
-]
+powers$Metric <- factor(powers$Metric, levels = seq_len(metric_count))
+powers <- powers[order(
+  powers$WatermarkKeyLength,
+  powers$TokensCount,
+  powers$Threshold,
+  powers$LLM,
+  powers$GenerationMethod,
+  powers$Metric
+), ]
 
 powers$LineType <- rep("dashed", nrow(powers))
-powers$LineType[powers$Metric == "Metric 2"] <- "theoretical"
-powers$LineType[powers$Metric %in% paste("Metric", 2 + seq_len(13))] <- "empty"
-powers$LineType[powers$Metric %in% paste("Metric", 15 + seq_len(13))] <- "best"
-powers$LineType[powers$Metric %in% paste("Metric", 28 + seq_len(13))] <- "icl"
+powers$LineType[powers$Metric == 2] <- "theoretical"
+powers$LineType[powers$Metric %in% (2 + seq_len(13))] <- "empty"
+powers$LineType[powers$Metric %in% (15 + seq_len(13))] <- "best"
+powers$LineType[powers$Metric %in% (28 + seq_len(13))] <- "icl"
 
-# matrix(powers[
-#   powers$Attack == "substitution" &
-#     powers$GenerationMethod == "gumbel" &
-#     powers$Threshold == 0.05 &
-#     powers$LLM == "ml3",
-#   "x"
-# ], ncol = 5, byrow = TRUE)
+matrix(powers[
+  powers$Attack == "substitution" &
+    powers$GenerationMethod == "gumbel" &
+    powers$Threshold == 0.05 &
+    powers$LLM == "ml3" &
+    powers$WatermarkKeyLength == 100 &
+    powers$TokensCount == 100,
+  "x"
+], nrow = metric_count, byrow = TRUE)
 
 metric_subsets <- list(
   empty = c(1, 3, 5:6, 11:13),
@@ -316,48 +326,61 @@ metric_subsets <- list(
   icl = c(1, 29, 31:32, 37:39)
 )
 
-for (p_value_type in names(metric_subsets)) {
-  for (threshold in c(0.05, 0.01)) {
-    p <- ggplot2::ggplot() +
-      ggplot2::geom_line(
-        ggplot2::aes(x = AttackPct, y = x, color = Metric, linetype = LineType),
-        data = powers[
-          powers$Threshold == threshold &
-            powers$Metric %in% paste("Metric", metric_subsets[[p_value_type]]),
-        ]
-      ) +
-      ggplot2::facet_grid(LLM ~ GenerationMethod + Attack, scales = "free_y") +
-      ggplot2::theme_minimal() +
-      ggplot2::scale_x_continuous(labels = scales::percent) +
-      ggplot2::scale_linetype_manual(
-        values = c(
-          "dashed" = "dashed",
-          "empty" = "solid",
-          "best" = "solid",
-          "icl" = "solid"
-        )
-      ) +
-      ggplot2::guides(linetype = "none")
-    ggplot2::ggsave(
-      paste0(
-        "results/powers-",
-        watermark_key_length,
-        "-",
-        tokens_count,
-        "-",
-        k,
-        "-",
-        threshold,
-        "-",
-        p_value_type,
-        ".pdf"
-      ),
-      p,
-      width = 10,
-      height = 7
-    )
+for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) {
+  watermark_key_length <- watermark_key_token_pairs[wkt_index, 1]
+  tokens_count <- watermark_key_token_pairs[wkt_index, 2]
+  for (p_value_type in names(metric_subsets)) {
+    for (threshold in c(0.05, 0.01)) {
+      p <- ggplot2::ggplot() +
+        ggplot2::geom_line(
+          ggplot2::aes(
+            x = AttackPct, y = x, color = Metric, linetype = LineType
+          ),
+          data = powers[
+            powers$Threshold == threshold &
+              powers$Metric %in% metric_subsets[[p_value_type]] &
+              powers$WatermarkKeyLength == watermark_key_length &
+              powers$TokensCount == tokens_count,
+          ]
+        ) +
+        ggplot2::facet_grid(
+          LLM ~ GenerationMethod + Attack, scales = "free_y"
+        ) +
+        ggplot2::theme_minimal() +
+        ggplot2::scale_x_continuous(labels = scales::percent) +
+        ggplot2::scale_linetype_manual(
+          values = c(
+            "dashed" = "dashed",
+            "theoretical" = "solid",
+            "empty" = "solid",
+            "best" = "solid",
+            "icl" = "solid"
+          )
+        ) +
+        ggplot2::guides(linetype = "none")
+      ggplot2::ggsave(
+        paste0(
+          "results/powers-",
+          watermark_key_length,
+          "-",
+          tokens_count,
+          "-",
+          tokens_count,
+          "-",
+          threshold,
+          "-",
+          p_value_type,
+          ".pdf"
+        ),
+        p,
+        width = 10,
+        height = 7
+      )
+    }
   }
 }
+
+################################################################################
 
 plots <- list()
 for (metric_to_compare in 2:14) {
@@ -393,7 +416,7 @@ ggplot2::ggsave(
     "-",
     tokens_count,
     "-",
-    k,
+    tokens_count,
     "-",
     threshold,
     "-comparison",

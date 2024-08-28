@@ -75,12 +75,8 @@ sbatch 2-download.sh
 
 ```shell
 rm -f 3-textgen-commands.sh
-for watermark_key_length in 20 50 100 500 1000; do
-  if [ $watermark_key_length -le 100 ]; then
-    tokens_count=$watermark_key_length
-  else
-    tokens_count=100
-  fi
+for watermark_key_length in 10 20 30 40 50 100; do
+  tokens_count=$watermark_key_length
 
   for method in gumbel; do
     for attack in deletion insertion substitution; do
@@ -119,12 +115,8 @@ Less than 128 GB.
 
 ```shell
 rm -f 4-detect-commands.sh
-for watermark_key_length in 20 50 80 100 500 1000; do
-  if [ $watermark_key_length -le 100 ]; then
-    tokens_count=$watermark_key_length
-  else
-    tokens_count=100
-  fi
+for watermark_key_length in 10 20 30 40 50 100; do
+  tokens_count=$watermark_key_length
 
   for method in gumbel; do
     for attack in deletion insertion substitution; do
