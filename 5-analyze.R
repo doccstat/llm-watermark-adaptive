@@ -148,6 +148,8 @@ df$ProbsErrorInfNorm <- as.numeric(df$ProbsErrorInfNorm)
 
 ################################################################################
 
+interested_metrics <- c(1, 13:15, 26:28, 39:41)
+
 theoretical_df <- data.frame(df[
   df$GenerationMethod == "gumbel" &
     df$Attack == "substitution" &
@@ -167,10 +169,9 @@ theoretical_df_power <- aggregate(
   ),
   FUN = function(x) mean(x, na.rm = TRUE)
 )
+
 theoretical_df_power_i <- theoretical_df_power[
-  theoretical_df_power$Metric %in% c(
-    1:3, 5:6, 11:13, 16, 18:19, 24:26, 29, 31:32, 37:39
-  ),
+  theoretical_df_power$Metric %in% c(2, interested_metrics),
 ]
 theoretical_df_power_i$label_x <- prompt_count + 3
 for (llm in unique(theoretical_df_power_i$LLM)) {  # nolint
@@ -197,21 +198,19 @@ for (llm in unique(theoretical_df_power_i$LLM)) {  # nolint
           theoretical_df_power_i$WatermarkKeyLength == wkl &
           theoretical_df_power_i$Metric == facet_df[y_i, "Metric"],
         "label_x"
-      ] <- prompt_count + 5 + 12 * ((y_i - y_i_offset - 1) %% 5)
+      ] <- prompt_count + 5 + 12 * ((y_i - y_i_offset - 1) %% 6)
     }
   }
 }
 theoretical_df_power_ni <- theoretical_df_power[
-  !(theoretical_df_power$Metric %in% c(
-    1:3, 5:6, 11:13, 16, 18:19, 24:26, 29, 31:32, 37:39
-  )),
+  !(theoretical_df_power$Metric %in% c(2, interested_metrics)),
 ]
 
 p <- ggplot2::ggplot(
   theoretical_df,
   ggplot2::aes(x = PromptIndex, y = PValue, color = Metric)
 ) +
-  ggplot2::geom_point(alpha = 0.025) +
+  ggplot2::geom_point(alpha = 0.02) +
   ggplot2::geom_segment(
     data = theoretical_df_power_i,
     ggplot2::aes(
@@ -310,6 +309,9 @@ powers$LineType[powers$Metric %in% (2 + seq_len(13))] <- "empty"
 powers$LineType[powers$Metric %in% (15 + seq_len(13))] <- "best"
 powers$LineType[powers$Metric %in% (28 + seq_len(13))] <- "icl"
 
+powers$line_alpha <- 0.2
+powers$line_alpha[powers$Metric %in% interested_metrics] <- 1
+
 matrix(powers[
   powers$Attack == "substitution" &
     powers$GenerationMethod == "gumbel" &
@@ -320,66 +322,61 @@ matrix(powers[
   "x"
 ], nrow = metric_count, byrow = TRUE)
 
-metric_subsets <- list(
-  empty = c(1, 3, 5:6, 11:13),
-  best = c(1, 16, 18:19, 24:26),
-  icl = c(1, 29, 31:32, 37:39)
+color_palette <- c(
+  "black", grDevices::hcl(
+    h = seq(15, 375, length = length(interested_metrics) + 1), l = 65, c = 100
+  )[seq_along(interested_metrics)]
 )
+names(color_palette) <- c("black", as.character(interested_metrics))
 
-for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) {
-  watermark_key_length <- watermark_key_token_pairs[wkt_index, 1]
-  tokens_count <- watermark_key_token_pairs[wkt_index, 2]
-  for (p_value_type in names(metric_subsets)) {
-    for (threshold in c(0.05, 0.01)) {
-      p <- ggplot2::ggplot() +
-        ggplot2::geom_line(
-          ggplot2::aes(
-            x = AttackPct, y = x, color = Metric, linetype = LineType
-          ),
-          data = powers[
-            powers$Threshold == threshold &
-              powers$Metric %in% metric_subsets[[p_value_type]] &
-              powers$WatermarkKeyLength == watermark_key_length &
-              powers$TokensCount == tokens_count,
-          ]
-        ) +
-        ggplot2::facet_grid(
-          LLM ~ GenerationMethod + Attack, scales = "free_y"
-        ) +
-        ggplot2::theme_minimal() +
-        ggplot2::scale_x_continuous(labels = scales::percent) +
-        ggplot2::scale_linetype_manual(
-          values = c(
-            "dashed" = "dashed",
-            "theoretical" = "solid",
-            "empty" = "solid",
-            "best" = "solid",
-            "icl" = "solid"
-          )
-        ) +
-        ggplot2::guides(linetype = "none")
-      ggplot2::ggsave(
-        paste0(
-          "results/powers-",
-          watermark_key_length,
-          "-",
-          tokens_count,
-          "-",
-          tokens_count,
-          "-",
-          threshold,
-          "-",
-          p_value_type,
-          ".pdf"
-        ),
-        p,
-        width = 10,
-        height = 7
+for (threshold in c(0.05, 0.01)) {
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_line(
+      ggplot2::aes(
+        x = AttackPct,
+        y = x,
+        color = Metric,
+        linetype = LineType,
+        alpha = line_alpha
+      ),
+      data = powers[powers$Threshold == threshold, ]
+    ) +
+    ggplot2::facet_grid(
+      LLM + GenerationMethod + Attack ~ WatermarkKeyLength
+    ) +
+    ggplot2::theme_minimal() +
+    ggplot2::scale_x_continuous(labels = scales::percent) +
+    ggplot2::scale_linetype_manual(
+      values = c(
+        "dashed" = "dashed",
+        "theoretical" = "solid",
+        "empty" = "solid",
+        "best" = "solid",
+        "icl" = "solid"
       )
-    }
-  }
+    ) +
+    ggplot2::scale_color_manual(
+      values = color_palette
+    ) +
+    ggplot2::theme(legend.position = "bottom") +
+    ggplot2::guides(
+      linetype = "none",
+      alpha = "none",
+      color = ggplot2::guide_legend(nrow = 1, byrow = TRUE)
+    )
+  ggplot2::ggsave(
+    paste0(
+      "results/powers-",
+      threshold,
+      ".pdf"
+    ),
+    p,
+    width = 12,
+    height = 7
+  )
 }
 
+################################################################################
 ################################################################################
 
 plots <- list()
