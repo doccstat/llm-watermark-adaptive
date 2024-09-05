@@ -115,7 +115,7 @@ Less than 128 GB.
 
 ```shell
 rm -f 4-detect-commands.sh
-for watermark_key_length in 10 20 30 40 50 100; do
+for watermark_key_length in 10 20 30; do
   tokens_count=$watermark_key_length
 
   for method in gumbel; do
@@ -180,6 +180,6 @@ tokenizer.decode([128000,31437,43874,656,279,5370,12283,499,3077,14407,3118,304,
 tokenizer.decode([33235,430,279,9578,374,264,26436,574,14592,505,279,12917,315,14154,3980,79454,11,323,813,16801,304,279,14209,315,279,3276,575,2601,574,4762,28160,555,279,9815,902,279,14154,18088,23933,11467,6688,315,872,64876,13,1115,11,520,3325,11], skip_special_tokens=True)
 # ' doctrine that the earth is a sphere was derived from the teaching of ancient geographers, and his belief in the existence of the antipodes was probably influenced by the accounts which the ancient Irish voyagers gave of their journeys. This, at least,'
 # text
-# tokenizer.decode([374,279,9647,315,279,88931,16483,13,8595,433,374,430,584,527,6982,912,3585,315,70000,1990], skip_special_tokens=True)
+tokenizer.decode([374,279,9647,315,279,88931,16483,13,8595,433,374,430,584,527,6982,912,3585,315,70000,1990], skip_special_tokens=True)
 # ' is the opinion of the foregoing writers. Why it is that we are shown no points of resemblance between'
 ```
