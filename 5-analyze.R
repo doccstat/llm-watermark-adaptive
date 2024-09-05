@@ -8,10 +8,10 @@ attacks <- c("deletion", "insertion", "substitution")
 watermark_key_token_pairs <- matrix(c(
   10, 10,
   20, 20,
-  30, 30,
-  40, 40,
-  50, 50,
-  100, 100
+  30, 30
+  # 40, 40,
+  # 50, 50,
+  # 100, 100
 ), ncol = 2, byrow = TRUE)
 attack_pcts <- c(
   "0.0", "0.05", "0.1", "0.2", "0.3"
@@ -148,11 +148,11 @@ df$ProbsErrorInfNorm <- as.numeric(df$ProbsErrorInfNorm)
 
 ################################################################################
 
-interested_metrics <- c(1, 13:15, 26:28, 39:41)
+interested_metrics <- c(1, 13:15, 26:28, 39:50)
 
 theoretical_df <- data.frame(df[
   df$GenerationMethod == "gumbel" &
-    df$Attack == "substitution" &
+    df$Attack == "deletion" &
     df$AttackPct == 0,
   c(
     "LLM", "WatermarkKeyLength", "TokensCount",
@@ -221,17 +221,17 @@ p <- ggplot2::ggplot(
       color = Metric
     )
   ) +
-  ggplot2::geom_segment(
-    data = theoretical_df_power_ni,
-    ggplot2::aes(
-      x = 0,
-      xend = prompt_count,
-      y = x,
-      yend = x,
-      color = Metric
-    ),
-    alpha = 0.2
-  ) +
+  # ggplot2::geom_segment(
+  #   data = theoretical_df_power_ni,
+  #   ggplot2::aes(
+  #     x = 0,
+  #     xend = prompt_count,
+  #     y = x,
+  #     yend = x,
+  #     color = Metric
+  #   ),
+  #   alpha = 0.2
+  # ) +
   ggplot2::geom_text(
     data = theoretical_df_power_i,
     ggplot2::aes(label = Metric, x = label_x, y = x),
@@ -379,50 +379,244 @@ for (threshold in c(0.05, 0.01)) {
 ################################################################################
 ################################################################################
 
-plots <- list()
-for (metric_to_compare in 2:14) {
-  metric_subset <- metric_to_compare + 13 * 0:2
-  p <- ggplot2::ggplot() +
-    ggplot2::geom_line(
-      ggplot2::aes(x = AttackPct, y = x, color = Metric, linetype = LineType),
-      data = powers[
-        powers$Threshold == threshold &
-          powers$Metric %in% paste("Metric", metric_subset),
-      ]
-    ) +
-    ggplot2::facet_grid(~ LLM + GenerationMethod + Attack, scales = "free_y") +
-    ggplot2::theme_minimal() +
-    ggplot2::scale_x_continuous(labels = scales::percent) +
-    ggplot2::scale_linetype_manual(
-      values = c(
-        "empty" = "dotted",
-        "best" = "solid",
-        "icl" = "solid"
-      )
-    ) +
-    ggplot2::guides(linetype = "none") +
-    ggplot2::theme(strip.text = ggplot2::element_blank()) +
-    ggplot2::theme(axis.title.x = ggplot2::element_blank())
-  plots[[metric_to_compare - 1]] <- p
-}
-p <- gridExtra::grid.arrange(grobs = plots, ncol = 1)
-ggplot2::ggsave(
+watermark_key_length <- 10
+tokens_count <- 10
+llm <- "ml3"
+
+df_probs_list <- list()
+
+probs_matrix <- read.csv(
   paste0(
-    "results/powers-",
+    folder,
+    llm,
+    "-gumbel-substitution-",
     watermark_key_length,
     "-",
     tokens_count,
+    "-0.0.p-probs.csv"
+  ),
+  header = FALSE
+)
+probs_name <- "true"
+df_probs_list[[probs_name]] <- cbind(
+  probs_name,
+  seq_len(nrow(probs_matrix)),
+  probs_matrix
+)
+
+probs_matrix <- read.csv(
+  paste0(
+    folder,
+    llm,
+    "-gumbel-substitution-",
+    watermark_key_length,
     "-",
     tokens_count,
-    "-",
-    threshold,
-    "-comparison",
-    ".pdf"
+    "-0.0.p-re-calculated-empty-probs.csv"
   ),
-  p,
-  width = 20,
-  height = 30
+  header = FALSE
 )
+probs_name <- "empty"
+df_probs_list[[probs_name]] <- cbind(
+  probs_name,
+  seq_len(nrow(probs_matrix)),
+  probs_matrix
+)
+
+probs_matrix <- read.csv(
+  paste0(
+    folder,
+    llm,
+    "-gumbel-substitution-",
+    watermark_key_length,
+    "-",
+    tokens_count,
+    "-0.0.p-re-calculated-best-probs.csv"
+  ),
+  header = FALSE
+)
+probs_name <- "best"
+df_probs_list[[probs_name]] <- cbind(
+  probs_name,
+  seq_len(nrow(probs_matrix)),
+  probs_matrix
+)
+
+probs_matrix <- read.csv(
+  paste0(
+    folder,
+    llm,
+    "-gumbel-substitution-",
+    watermark_key_length,
+    "-",
+    tokens_count,
+    "-0.0.p-re-calculated-icl-probs.csv"
+  ),
+  header = FALSE
+)
+probs_name <- "icl"
+df_probs_list[[probs_name]] <- cbind(
+  probs_name,
+  seq_len(nrow(probs_matrix)),
+  probs_matrix
+)
+
+difference_df <- list()
+for (probs_name in c("empty", "best", "icl")) {
+  difference_df[[probs_name]] <- cbind(
+    probs_name,
+    seq_len(nrow(df_probs_list[[probs_name]])),
+    df_probs_list[["true"]][, -c(1, 2)] - df_probs_list[[probs_name]][, -c(1, 2)]
+  )
+  names(difference_df[[probs_name]]) <-
+    c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+}
+for (lambda in 0:9 / 10) {
+  probs_name <- paste0("empty,S1-", 1 - lambda)
+  difference_df[[probs_name]] <- cbind(
+    probs_name,
+    seq_len(nrow(df_probs_list[["empty"]])),
+    df_probs_list[["true"]][, -c(1, 2)] - (
+      lambda * df_probs_list[["empty"]][, -c(1, 2)] + (1 - lambda) * 0.5
+    )
+  )
+  names(difference_df[[probs_name]]) <-
+    c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+}
+
+exp1 <- df_probs_list[["empty"]][, -c(1, 2)]
+exp1[exp1 >= 0.1] <- min(1, 3 * exp1[exp1 >= 0.1])
+difference_df[["exp1"]] <- cbind(
+  "exp1",
+  seq_len(nrow(df_probs_list[["empty"]])),
+  df_probs_list[["true"]][, -c(1, 2)] - exp1
+)
+names(difference_df[["exp1"]]) <-
+  c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+
+exp2 <- df_probs_list[["empty"]][, -c(1, 2)]
+exp2[exp2 >= 0.1] <- min(1, 2 * exp2[exp2 >= 0.1])
+difference_df[["exp2"]] <- cbind(
+  "exp2",
+  seq_len(nrow(df_probs_list[["empty"]])),
+  df_probs_list[["true"]][, -c(1, 2)] - exp2
+)
+names(difference_df[["exp2"]]) <-
+  c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+
+exp3 <- df_probs_list[["empty"]][, -c(1, 2)]
+exp3 <- 0.8 * exp3 + 0.2
+difference_df[["exp3"]] <- cbind(
+  "exp3",
+  seq_len(nrow(df_probs_list[["empty"]])),
+  df_probs_list[["true"]][, -c(1, 2)] - exp3
+)
+names(difference_df[["exp3"]]) <-
+  c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+
+exp4 <- df_probs_list[["empty"]][, -c(1, 2)]
+exp4[exp4 >= 0.1] <- 0.8 * exp4[exp4 >= 0.1] + 0.2
+difference_df[["exp4"]] <- cbind(
+  "exp4",
+  seq_len(nrow(df_probs_list[["empty"]])),
+  df_probs_list[["true"]][, -c(1, 2)] - exp4
+)
+names(difference_df[["exp4"]]) <-
+  c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+
+exp5 <- df_probs_list[["empty"]][, -c(1, 2)]
+exp5[, 1] <- 0.5
+difference_df[["exp5"]] <- cbind(
+  "exp5",
+  seq_len(nrow(df_probs_list[["empty"]])),
+  df_probs_list[["true"]][, -c(1, 2)] - exp5
+)
+names(difference_df[["exp5"]]) <-
+  c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+
+exp6 <- df_probs_list[["empty"]][, -c(1, 2)]
+exp6[exp6 <= 1e-6] <- 0.9
+difference_df[["exp6"]] <- cbind(
+  "exp6",
+  seq_len(nrow(df_probs_list[["empty"]])),
+  df_probs_list[["true"]][, -c(1, 2)] - exp6
+)
+names(difference_df[["exp6"]]) <-
+  c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+
+exp7 <- df_probs_list[["empty"]][, -c(1, 2)]
+exp7 <- sqrt(exp7)
+difference_df[["exp7"]] <- cbind(
+  "exp7",
+  seq_len(nrow(df_probs_list[["empty"]])),
+  df_probs_list[["true"]][, -c(1, 2)] - exp7
+)
+names(difference_df[["exp7"]]) <-
+  c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+
+exp8 <- df_probs_list[["empty"]][, -c(1, 2)]
+exp8 <- exp8^(1/3)
+difference_df[["exp8"]] <- cbind(
+  "exp8",
+  seq_len(nrow(df_probs_list[["empty"]])),
+  df_probs_list[["true"]][, -c(1, 2)] - exp8
+)
+names(difference_df[["exp8"]]) <-
+  c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+
+difference_df <- do.call(rbind, difference_df)
+difference_df <- data.frame(difference_df)
+names(difference_df) <-
+  c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+difference_df$infty <- apply(
+  difference_df[, -c(1, 2)],
+  1,
+  function(x) max(abs(x))
+)
+difference_df$L2 <- apply(
+  difference_df[, -c(1, 2)],
+  1,
+  function(x) sqrt(sum(x^2))
+)
+difference_df$L1 <- apply(
+  difference_df[, -c(1, 2)],
+  1,
+  function(x) sum(abs(x))
+)
+difference_df_molten <- reshape2::melt(
+  difference_df[, c("ProbsName", "L1", "L2", "infty")],
+  id.vars = c("ProbsName"),
+  value.name = "value"
+)
+ggplot2::ggplot(
+  difference_df_molten,
+  ggplot2::aes(x = variable, y = value, fill = ProbsName)
+) +
+  ggplot2::geom_boxplot() +
+  ggplot2::facet_wrap(~variable, scales = "free") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = "bottom")
+
+df_probs <- do.call(rbind, df_probs_list)
+df_probs <- data.frame(df_probs)
+names(df_probs) <-
+  c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+
+df_probs_molten <- reshape2::melt(
+  df_probs,
+  id.vars = c("ProbsName", "PromptIndex"),
+  variable.name = "TokenIndex",
+  value.name = "Probs"
+)
+
+ggplot2::ggplot(
+  df_probs_molten,
+  ggplot2::aes(x = TokenIndex, y = Probs, color = ProbsName, group = ProbsName)
+) +
+  ggplot2::geom_line() +
+  ggplot2::facet_wrap(~PromptIndex, scales = "free_y") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = "bottom")
 
 ################################################################################
 

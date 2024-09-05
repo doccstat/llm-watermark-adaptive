@@ -916,25 +916,221 @@ elif args.method == "gumbel":
         )
     test_stats.append(test_stat_ems_adaptive_icl_13)
 
-    # def dist2(x, y): return ems_adaptive(
-    #     x, y, torch.from_numpy(genfromtxt(
-    #         args.token_file + '-null-empty-probs.csv', delimiter=','
-    #     )[Tindex, :])
-    # )
+    empty_probs_exp_1 = genfromtxt(
+        args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
+    )[Tindex, :]
+    empty_probs_exp_1[0] = 0.5
+    empty_probs_exp_1 = torch.from_numpy(empty_probs_exp_1)
 
-    # def test_stat2(tokens, n, k, generator, vocab_size, null=False):
-    # return phi(
-    #     tokens=tokens,
-    #     n=n,
-    #     k=k,
-    #     generator=generator,
-    #     key_func=gumbel_key_func,
-    #     vocab_size=vocab_size,
-    #     dist=dist2,
-    #     null=null,
-    #     normalize=False
-    # )
-    # test_stats.append(test_stat2)
+    def metric_ems_adaptive_empty_exp_1(x, y, probs):
+        return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
+
+    def test_stat_ems_adaptive_empty_exp_1(tokens, n, k, generator, vocab_size, null=False):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=gumbel_key_func,
+            vocab_size=vocab_size,
+            dist=metric_ems_adaptive_empty_exp_1,
+            empty_probs=empty_probs_exp_1,
+            null=null,
+            normalize=False
+        )
+    test_stats.append(test_stat_ems_adaptive_empty_exp_1)
+
+    empty_probs_exp_2 = genfromtxt(
+        args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
+    )[Tindex, :]
+    empty_probs_exp_2[0] = 1.0
+    empty_probs_exp_2 = torch.from_numpy(empty_probs_exp_2)
+
+    def metric_ems_adaptive_empty_exp_2(x, y, probs):
+        return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
+
+    def test_stat_ems_adaptive_empty_exp_2(tokens, n, k, generator, vocab_size, null=False):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=gumbel_key_func,
+            vocab_size=vocab_size,
+            dist=metric_ems_adaptive_empty_exp_2,
+            empty_probs=empty_probs_exp_2,
+            null=null,
+            normalize=False
+        )
+    test_stats.append(test_stat_ems_adaptive_empty_exp_2)
+
+    empty_probs_exp_3 = genfromtxt(
+        args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
+    )[Tindex, :]
+    empty_probs_exp_3 = np.minimum(np.where(empty_probs_exp_3 >= 0.1, 3 * empty_probs_exp_3, empty_probs_exp_3), 1.0)
+    empty_probs_exp_3 = torch.from_numpy(empty_probs_exp_3)
+
+    def metric_ems_adaptive_empty_exp_3(x, y, probs):
+        return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
+
+    def test_stat_ems_adaptive_empty_exp_3(tokens, n, k, generator, vocab_size, null=False):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=gumbel_key_func,
+            vocab_size=vocab_size,
+            dist=metric_ems_adaptive_empty_exp_3,
+            empty_probs=empty_probs_exp_3,
+            null=null,
+            normalize=False
+        )
+    test_stats.append(test_stat_ems_adaptive_empty_exp_3)
+
+    empty_probs_exp_4 = genfromtxt(
+        args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
+    )[Tindex, :]
+    empty_probs_exp_4 = np.minimum(np.where(empty_probs_exp_4 >= 0.1, 2 * empty_probs_exp_4, empty_probs_exp_4), 1.0)
+    empty_probs_exp_4 = torch.from_numpy(empty_probs_exp_4)
+
+    def metric_ems_adaptive_empty_exp_4(x, y, probs):
+        return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
+
+    def test_stat_ems_adaptive_empty_exp_4(tokens, n, k, generator, vocab_size, null=False):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=gumbel_key_func,
+            vocab_size=vocab_size,
+            dist=metric_ems_adaptive_empty_exp_4,
+            empty_probs=empty_probs_exp_4,
+            null=null,
+            normalize=False
+        )
+    test_stats.append(test_stat_ems_adaptive_empty_exp_4)
+
+    empty_probs_exp_5 = genfromtxt(
+        args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
+    )[Tindex, :]
+    empty_probs_exp_5 = 0.8 * empty_probs_exp_5 + 0.2
+    empty_probs_exp_5 = torch.from_numpy(empty_probs_exp_5)
+
+    def metric_ems_adaptive_empty_exp_5(x, y, probs):
+        return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
+
+    def test_stat_ems_adaptive_empty_exp_5(tokens, n, k, generator, vocab_size, null=False):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=gumbel_key_func,
+            vocab_size=vocab_size,
+            dist=metric_ems_adaptive_empty_exp_5,
+            empty_probs=empty_probs_exp_5,
+            null=null,
+            normalize=False
+        )
+    test_stats.append(test_stat_ems_adaptive_empty_exp_5)
+
+    empty_probs_exp_6 = genfromtxt(
+        args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
+    )[Tindex, :]
+    empty_probs_exp_6 = np.where(empty_probs_exp_6 >= 0.1, 0.8 * empty_probs_exp_6 + 0.2, empty_probs_exp_6)
+    empty_probs_exp_6 = torch.from_numpy(empty_probs_exp_6)
+
+    def metric_ems_adaptive_empty_exp_6(x, y, probs):
+        return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
+
+    def test_stat_ems_adaptive_empty_exp_6(tokens, n, k, generator, vocab_size, null=False):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=gumbel_key_func,
+            vocab_size=vocab_size,
+            dist=metric_ems_adaptive_empty_exp_6,
+            empty_probs=empty_probs_exp_6,
+            null=null,
+            normalize=False
+        )
+    test_stats.append(test_stat_ems_adaptive_empty_exp_6)
+
+    empty_probs_exp_7 = genfromtxt(
+        args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
+    )[Tindex, :]
+    empty_probs_exp_7 = np.where(empty_probs_exp_7 <= 1e-6, 0.9, empty_probs_exp_7)
+    empty_probs_exp_7 = torch.from_numpy(empty_probs_exp_7)
+
+    def metric_ems_adaptive_empty_exp_7(x, y, probs):
+        return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
+
+    def test_stat_ems_adaptive_empty_exp_7(tokens, n, k, generator, vocab_size, null=False):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=gumbel_key_func,
+            vocab_size=vocab_size,
+            dist=metric_ems_adaptive_empty_exp_7,
+            empty_probs=empty_probs_exp_7,
+            null=null,
+            normalize=False
+        )
+    test_stats.append(test_stat_ems_adaptive_empty_exp_7)
+
+    empty_probs_exp_8 = genfromtxt(
+        args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
+    )[Tindex, :]
+    empty_probs_exp_8 = np.sqrt(empty_probs_exp_8)
+    empty_probs_exp_8 = torch.from_numpy(empty_probs_exp_8)
+
+    def metric_ems_adaptive_empty_exp_8(x, y, probs):
+        return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
+
+    def test_stat_ems_adaptive_empty_exp_8(tokens, n, k, generator, vocab_size, null=False):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=gumbel_key_func,
+            vocab_size=vocab_size,
+            dist=metric_ems_adaptive_empty_exp_8,
+            empty_probs=empty_probs_exp_8,
+            null=null,
+            normalize=False
+        )
+    test_stats.append(test_stat_ems_adaptive_empty_exp_8)
+
+    empty_probs_exp_9 = genfromtxt(
+        args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
+    )[Tindex, :]
+    empty_probs_exp_9 = np.power(empty_probs_exp_9, 1/3)
+    empty_probs_exp_9 = torch.from_numpy(empty_probs_exp_9)
+
+    def metric_ems_adaptive_empty_exp_9(x, y, probs):
+        return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
+
+    def test_stat_ems_adaptive_empty_exp_9(tokens, n, k, generator, vocab_size, null=False):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=gumbel_key_func,
+            vocab_size=vocab_size,
+            dist=metric_ems_adaptive_empty_exp_9,
+            empty_probs=empty_probs_exp_9,
+            null=null,
+            normalize=False
+        )
+    test_stats.append(test_stat_ems_adaptive_empty_exp_9)
 
 else:
     raise

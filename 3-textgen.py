@@ -395,8 +395,9 @@ if args.method == "transform":
     pi_writer = csv.writer(pi_save, delimiter=",")
 
 attacked_samples = copy.deepcopy(watermarked_samples)
-# icl_samples = []
+icl_samples = []
 icl_prompts = []
+icl_sample_max_length = 0
 icl_prompt_max_length = 0
 
 pbar = tqdm(total=T)
@@ -410,14 +411,15 @@ for itm in range(T):
     icl_prompt = gpt_prompt(
         watermarked_sample, args.gpt_prompt_key
     ) if args.gpt_prompt_key else watermarked_sample
+    icl_samples.append(tokenizer.encode(watermarked_sample + ". What might be the prompt that generated this text? Start with the prompt directly. ",
+                                        return_tensors='pt',
+                                        truncation=True,
+                                        max_length=2048)[0])
+    icl_sample_max_length = max(icl_sample_max_length, len(icl_samples[-1]))
     icl_prompts.append(tokenizer.encode(icl_prompt,
                                         return_tensors='pt',
                                         truncation=True,
                                         max_length=2048)[0])
-    # icl_samples.append(tokenizer.encode(watermarked_sample + ". What might be the prompt that generated this text? Start with the prompt directly.",
-    #                                     return_tensors='pt',
-    #                                     truncation=True,
-    #                                     max_length=2048)[0])
     icl_prompt_max_length = max(icl_prompt_max_length, len(icl_prompts[-1]))
     watermarked_sample = tokenizer.encode(watermarked_sample,
                                           return_tensors='pt',
@@ -451,6 +453,12 @@ log_file.close()
 attacked_tokens_save.close()
 
 # Pad the icl samples to the maximum length.
+icl_samples = [
+    torch.nn.functional.pad(
+        icl_sample, (0, icl_sample_max_length - len(icl_sample)),
+        "constant", candidate_token.item()
+    ) for icl_sample in icl_samples
+]
 icl_prompts = [
     torch.nn.functional.pad(
         icl_prompt, (0, icl_prompt_max_length - len(icl_prompt)),
@@ -458,28 +466,30 @@ icl_prompts = [
     ) for icl_prompt in icl_prompts
 ]
 
+if not args.gpt_prompt_key:
+    # Generate the ICL prompts for the attacked watermarked texts.
+    icl_prompts = []
+    pbar = tqdm(total=n_batches)
+    for batch in range(n_batches):
+        idx = torch.arange(batch * args.batch_size,
+                        min(T, (batch + 1) * args.batch_size))
+
+        null_sample, _, _ = generate_rnd(
+            torch.vstack(icl_samples)[idx], prompt_tokens + buffer_tokens,
+            model, candidate_prompts[-1][idx]
+        )
+        icl_prompts.append(null_sample[:, icl_sample_max_length:])
+
+        pbar.update(1)
+    pbar.close()
+icl_prompts = torch.vstack(icl_prompts)
+candidate_prompts.append(icl_prompts)
+
 icl_prompt_save = open(args.save + '-icl-prompt.csv', 'w')
 icl_prompt_writer = csv.writer(icl_prompt_save, delimiter=",")
 for icl_prompt in icl_prompts:
     icl_prompt_writer.writerow(np.asarray(icl_prompt.numpy()))
 icl_prompt_save.close()
-
-# # Generate the ICL prompts for the attacked watermarked texts.
-# icl_prompts = []
-# pbar = tqdm(total=n_batches)
-# for batch in range(n_batches):
-#     idx = torch.arange(batch * args.batch_size,
-#                        min(T, (batch + 1) * args.batch_size))
-
-#     null_sample, _, _ = generate_rnd(
-#         icl_samples[idx], prompt_tokens + buffer_tokens,
-#         model, candidate_prompts[-1][idx]
-#     )
-#     icl_prompts.append(null_sample[:, icl_sample_max_length:])
-
-#     pbar.update(1)
-# pbar.close()
-candidate_prompts.append(torch.vstack(icl_prompts))
 
 re_calculated_best_probs = []
 re_calculated_empty_probs = []
