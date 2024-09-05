@@ -491,10 +491,15 @@ for icl_prompt in icl_prompts:
     icl_prompt_writer.writerow(np.asarray(icl_prompt.numpy()))
 icl_prompt_save.close()
 
+re_calculated_probs = []
 re_calculated_best_probs = []
 re_calculated_empty_probs = []
 re_calculated_icl_probs = []
 
+re_calculated_probs_save = open(
+    args.save + "-re-calculated-probs.csv", "w")
+re_calculated_probs_writer = csv.writer(
+    re_calculated_probs_save, delimiter=",")
 re_calculated_best_probs_save = open(
     args.save + "-re-calculated-best-probs.csv", "w")
 re_calculated_best_probs_writer = csv.writer(
@@ -515,10 +520,12 @@ for batch in range(n_batches):
 
     candidate_probs = []
     for candidate_prompt_idx, candidate_prompt in enumerate(candidate_prompts):
-        _, _, watermarked_empty_prob = generate_watermark(
+        _, watermarked_prob, watermarked_empty_prob = generate_watermark(
             prompts[idx], seeds[idx], candidate_prompt[idx],
             fixed_inputs=attacked_samples[idx])
         candidate_probs.append(watermarked_empty_prob)
+        if candidate_prompt_idx == 0:
+            re_calculated_probs.append(watermarked_prob)
         if candidate_prompt_idx == len(candidate_prompts) - 2:
             re_calculated_empty_probs.append(watermarked_empty_prob)
         elif candidate_prompt_idx == len(candidate_prompts) - 1:
@@ -538,16 +545,20 @@ for batch in range(n_batches):
 
     pbar.update(1)
 pbar.close()
+re_calculated_probs = torch.vstack(re_calculated_probs)
 re_calculated_best_probs = torch.vstack(re_calculated_best_probs)
 re_calculated_empty_probs = torch.vstack(re_calculated_empty_probs)
 re_calculated_icl_probs = torch.vstack(re_calculated_icl_probs)
 for itm in range(T):
+    re_calculated_probs_writer.writerow(
+        np.asarray(re_calculated_probs[itm].numpy()))
     re_calculated_best_probs_writer.writerow(
         np.asarray(re_calculated_best_probs[itm].numpy()))
     re_calculated_empty_probs_writer.writerow(
         np.asarray(re_calculated_empty_probs[itm].numpy()))
     re_calculated_icl_probs_writer.writerow(
         np.asarray(re_calculated_icl_probs[itm].numpy()))
+re_calculated_probs_save.close()
 re_calculated_best_probs_save.close()
 re_calculated_empty_probs_save.close()
 re_calculated_icl_probs_save.close()
