@@ -66,9 +66,6 @@ parser.add_argument('--language', default="french", type=str)
 
 parser.add_argument('--truncate_vocab', default=8, type=int)
 
-parser.add_argument('--candidate_prompt_max', default=0, type=int,
-                    help="The maximum number of candidate prompts to consider, excluding the empty prompt and the ICL prompt. -1 means all prompts.")
-
 args = parser.parse_args()
 results['args'] = copy.deepcopy(args)
 
@@ -248,22 +245,11 @@ prompts = torch.vstack(prompts)
 # Generate the candidate prompts that will be used to find the best suited
 # prompt for the attacked watermarked texts.
 candidate_prompts = []
-with open("example/outputs.json") as file:
-    example_outputs = json.load(file)
-    for example_output in example_outputs:
-        candidate_prompt = example_output['instruction']
-        candidate_token = tokenizer.encode(
-            candidate_prompt,
-            return_tensors='pt',
-            truncation=True,
-            max_length=2048-buffer_tokens
-        )[0]
-        candidate_prompts.append(
-            torch.vstack([candidate_token for _ in range(T)])
-        )
-
-if args.candidate_prompt_max >= 0:
-    candidate_prompts = candidate_prompts[:args.candidate_prompt_max]
+for token in range(vocab_size):
+    candidate_token = torch.tensor([token])
+    candidate_prompts.append(
+        torch.vstack([candidate_token for _ in range(T)])
+    )
 
 empty_prompt_save = open(args.save + '-empty-prompt.txt', 'w')
 if args.model == "facebook/opt-1.3b":
@@ -495,6 +481,7 @@ re_calculated_probs = []
 re_calculated_best_probs = []
 re_calculated_empty_probs = []
 re_calculated_icl_probs = []
+re_constructed_prompts = []
 
 re_calculated_probs_save = open(
     args.save + "-re-calculated-probs.csv", "w")
@@ -512,43 +499,60 @@ re_calculated_icl_probs_save = open(
     args.save + "-re-calculated-icl-probs.csv", "w")
 re_calculated_icl_probs_writer = csv.writer(
     re_calculated_icl_probs_save, delimiter=",")
+re_constructed_prompts_save = open(
+    args.save + "-re-constructed-prompts.csv", "w")
+re_constructed_prompts_writer = csv.writer(
+    re_constructed_prompts_save, delimiter=",")
 
-pbar = tqdm(total=n_batches)
+pbar = tqdm(total=n_batches * prompt_tokens)
 for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
                        min(T, (batch + 1) * args.batch_size))
 
-    candidate_probs = []
-    for candidate_prompt_idx, candidate_prompt in enumerate(candidate_prompts):
-        _, watermarked_prob, watermarked_empty_prob = generate_watermark(
-            prompts[idx], seeds[idx], candidate_prompt[idx],
-            fixed_inputs=attacked_samples[idx])
-        candidate_probs.append(watermarked_empty_prob)
-        if candidate_prompt_idx == 0:
-            re_calculated_probs.append(watermarked_prob)
-        if candidate_prompt_idx == len(candidate_prompts) - 2:
-            re_calculated_empty_probs.append(watermarked_empty_prob)
-        elif candidate_prompt_idx == len(candidate_prompts) - 1:
-            re_calculated_icl_probs.append(watermarked_empty_prob)
+    reconstructed_prompt = torch.zeros((0, prompt_tokens), dtype=torch.long)
+    for _ in range(prompt_tokens):
+        candidate_probs = []
+        for candidate_prompt_idx, candidate_prompt in enumerate(candidate_prompts):
+            reconstructed_prompt_candidate = torch.cat(
+                (candidate_prompt[idx], reconstructed_prompt), dim=1)
+            _, watermarked_prob, watermarked_empty_prob = generate_watermark(
+                prompts[idx], seeds[idx], reconstructed_prompt_candidate,
+                fixed_inputs=attacked_samples[idx])
+            candidate_probs.append(watermarked_empty_prob)
+            if candidate_prompt_idx == 0:
+                re_calculated_probs.append(watermarked_prob)
+            if candidate_prompt_idx == len(candidate_prompts) - 2:
+                re_calculated_empty_probs.append(watermarked_empty_prob)
+            elif candidate_prompt_idx == len(candidate_prompts) - 1:
+                re_calculated_icl_probs.append(watermarked_empty_prob)
 
-    # Convert list to tensor before applying tensor operations
-    candidate_probs = torch.stack(candidate_probs)
+        # Convert list to tensor before applying tensor operations
+        candidate_probs = torch.stack(candidate_probs)
 
-    # Now perform the log and sum operations on the tensor
-    best_candidate_idx = torch.argmax(
-        torch.sum(torch.log(candidate_probs), 2), 0
-    )
+        # Now perform the log and sum operations on the tensor
+        best_candidate_idx = torch.argmax(
+            torch.sum(torch.log(candidate_probs), 2), 0
+        )
 
-    re_calculated_best_probs.append(
-        candidate_probs[best_candidate_idx, torch.arange(len(idx)), :]
-    )
+        re_calculated_best_probs.append(
+            candidate_probs[best_candidate_idx, torch.arange(len(idx)), :]
+        )
 
-    pbar.update(1)
+        reconstructed_prompt = torch.cat(
+            (candidate_prompts[best_candidate_idx, idx], reconstructed_prompt),
+            dim=1
+        )
+
+        pbar.update(1)
+
+    re_constructed_prompts.append(reconstructed_prompt)
+
 pbar.close()
 re_calculated_probs = torch.vstack(re_calculated_probs)
 re_calculated_best_probs = torch.vstack(re_calculated_best_probs)
 re_calculated_empty_probs = torch.vstack(re_calculated_empty_probs)
 re_calculated_icl_probs = torch.vstack(re_calculated_icl_probs)
+re_constructed_prompts = torch.vstack(re_constructed_prompts)
 for itm in range(T):
     re_calculated_probs_writer.writerow(
         np.asarray(re_calculated_probs[itm].numpy()))
@@ -558,9 +562,12 @@ for itm in range(T):
         np.asarray(re_calculated_empty_probs[itm].numpy()))
     re_calculated_icl_probs_writer.writerow(
         np.asarray(re_calculated_icl_probs[itm].numpy()))
+    re_constructed_prompts_writer.writerow(
+        np.asarray(re_constructed_prompts[itm].numpy()))
 re_calculated_probs_save.close()
 re_calculated_best_probs_save.close()
 re_calculated_empty_probs_save.close()
 re_calculated_icl_probs_save.close()
+re_constructed_prompts_save.close()
 
 pickle.dump(results, open(args.save, "wb"))
