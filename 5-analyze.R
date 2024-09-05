@@ -54,7 +54,8 @@ for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) {  # nolint
 prompt_count <- 100
 dfs <- list()
 filename <- sub("XXX", 0, paste0(pvalue_files_templates[1, ], collapse = ""))
-metric_count <- ncol(read.csv(filename, header = FALSE))
+metric_count <- 41
+# metric_count <- ncol(read.csv(filename, header = FALSE))
 
 clusters <- parallel::makeCluster(parallel::detectCores() - 1)
 doParallel::registerDoParallel(clusters)
@@ -99,7 +100,7 @@ for (template_index in seq_len(nrow(pvalue_files_templates))) {
       matrix(tryCatch(
         read.csv(filename, header = FALSE),
         error = function(e) rep(NA, metric_count)
-      ))
+      ))[seq_len(metric_count), ]
     }
   )
   for (prompt_index in seq_len(prompt_count)) {
@@ -148,7 +149,7 @@ df$ProbsErrorInfNorm <- as.numeric(df$ProbsErrorInfNorm)
 
 ################################################################################
 
-interested_metrics <- c(1, 13:15, 26:28, 39:50)
+interested_metrics <- c(1, 13:15, 26:28, 39:metric_count)
 
 theoretical_df <- data.frame(df[
   df$GenerationMethod == "gumbel" &
@@ -198,7 +199,7 @@ for (llm in unique(theoretical_df_power_i$LLM)) {  # nolint
           theoretical_df_power_i$WatermarkKeyLength == wkl &
           theoretical_df_power_i$Metric == facet_df[y_i, "Metric"],
         "label_x"
-      ] <- prompt_count + 5 + 12 * ((y_i - y_i_offset - 1) %% 6)
+      ] <- prompt_count + 5 + 12 * ((y_i - y_i_offset - 1) %% 7)
     }
   }
 }
@@ -254,7 +255,7 @@ p <- ggplot2::ggplot(
   ggplot2::facet_grid(LLM ~ WatermarkKeyLength) +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = "none")
-ggplot2::ggsave("results/theoretical.pdf", p, width = 12, height = 6)
+ggplot2::ggsave("results/theoretical.pdf", p, width = 7, height = 5)
 
 ################################################################################
 
@@ -339,10 +340,12 @@ for (threshold in c(0.05, 0.01)) {
         linetype = LineType,
         alpha = line_alpha
       ),
-      data = powers[powers$Threshold == threshold, ]
+      data = powers[
+        powers$Threshold == threshold & powers$Metric %in% interested_metrics,
+      ]
     ) +
     ggplot2::facet_grid(
-      LLM + GenerationMethod + Attack ~ WatermarkKeyLength
+      WatermarkKeyLength ~ LLM + GenerationMethod + Attack, scales = "free_y"
     ) +
     ggplot2::theme_minimal() +
     ggplot2::scale_x_continuous(labels = scales::percent) +
@@ -588,7 +591,8 @@ difference_df_molten <- reshape2::melt(
   id.vars = c("ProbsName"),
   value.name = "value"
 )
-ggplot2::ggplot(
+
+p <- ggplot2::ggplot(
   difference_df_molten,
   ggplot2::aes(x = variable, y = value, fill = ProbsName)
 ) +
@@ -596,11 +600,12 @@ ggplot2::ggplot(
   ggplot2::facet_wrap(~variable, scales = "free") +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = "bottom")
+ggplot2::ggsave("results/probs-error-boxplot.pdf", p, width = 15, height = 8)
 
 df_probs <- do.call(rbind, df_probs_list)
 df_probs <- data.frame(df_probs)
 names(df_probs) <-
-  c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+  c("ProbsName", "PromptIndex", seq_len(tokens_count))
 
 df_probs_molten <- reshape2::melt(
   df_probs,
@@ -608,15 +613,28 @@ df_probs_molten <- reshape2::melt(
   variable.name = "TokenIndex",
   value.name = "Probs"
 )
+df_probs_molten$TokenIndex <- as.numeric(df_probs_molten$TokenIndex)
 
-ggplot2::ggplot(
+p <- ggplot2::ggplot(
   df_probs_molten,
   ggplot2::aes(x = TokenIndex, y = Probs, color = ProbsName, group = ProbsName)
 ) +
   ggplot2::geom_line() +
   ggplot2::facet_wrap(~PromptIndex, scales = "free_y") +
   ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = "bottom") +
+  ggplot2::scale_x_continuous(breaks = seq_len(tokens_count))
+ggplot2::ggsave("results/probs.pdf", p, width = 30, height = 15)
+
+df_probs$criteria <- apply(df_probs[, -c(1, 2)], 1, function(x) sum(log(x)))
+p <- ggplot2::ggplot(
+  df_probs,
+  ggplot2::aes(x = ProbsName, y = criteria, fill = ProbsName)
+) +
+  ggplot2::geom_boxplot() +
+  ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = "bottom")
+ggplot2::ggsave("results/probs-criteria-boxplot.pdf", p, width = 8, height = 4)
 
 ################################################################################
 
