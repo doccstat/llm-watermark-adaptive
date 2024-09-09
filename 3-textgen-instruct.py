@@ -472,7 +472,7 @@ if not args.gpt_prompt_key:
     pbar = tqdm(total=n_batches)
     for batch in range(n_batches):
         idx = torch.arange(batch * args.batch_size,
-                        min(T, (batch + 1) * args.batch_size))
+                           min(T, (batch + 1) * args.batch_size))
 
         null_sample, _, _ = generate_rnd(
             torch.vstack(icl_samples)[idx], prompt_tokens + buffer_tokens,
@@ -513,7 +513,7 @@ re_calculated_icl_probs_save = open(
 re_calculated_icl_probs_writer = csv.writer(
     re_calculated_icl_probs_save, delimiter=",")
 
-pbar = tqdm(total=n_batches)
+pbar = tqdm(total=n_batches * len(candidate_prompts))
 for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
                        min(T, (batch + 1) * args.batch_size))
@@ -531,6 +531,8 @@ for batch in range(n_batches):
         elif candidate_prompt_idx == len(candidate_prompts) - 1:
             re_calculated_icl_probs.append(watermarked_empty_prob)
 
+        pbar.update(1)
+
     # Convert list to tensor before applying tensor operations
     candidate_probs = torch.stack(candidate_probs)
 
@@ -543,7 +545,6 @@ for batch in range(n_batches):
         candidate_probs[best_candidate_idx, torch.arange(len(idx)), :]
     )
 
-    pbar.update(1)
 pbar.close()
 re_calculated_probs = torch.vstack(re_calculated_probs)
 re_calculated_best_probs = torch.vstack(re_calculated_best_probs)

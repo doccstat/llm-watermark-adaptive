@@ -504,7 +504,7 @@ re_constructed_prompts_save = open(
 re_constructed_prompts_writer = csv.writer(
     re_constructed_prompts_save, delimiter=",")
 
-pbar = tqdm(total=n_batches * prompt_tokens)
+pbar = tqdm(total=n_batches * prompt_tokens * len(candidate_prompts))
 for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
                        min(T, (batch + 1) * args.batch_size))
@@ -526,6 +526,8 @@ for batch in range(n_batches):
             elif candidate_prompt_idx == len(candidate_prompts) - 1:
                 re_calculated_icl_probs.append(watermarked_empty_prob)
 
+            pbar.update(1)
+
         # Convert list to tensor before applying tensor operations
         candidate_probs = torch.stack(candidate_probs)
 
@@ -542,8 +544,6 @@ for batch in range(n_batches):
             (candidate_prompts[best_candidate_idx, idx], reconstructed_prompt),
             dim=1
         )
-
-        pbar.update(1)
 
     re_constructed_prompts.append(reconstructed_prompt)
 
