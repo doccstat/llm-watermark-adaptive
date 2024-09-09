@@ -75,7 +75,7 @@ sbatch 2-download.sh
 
 ```shell
 rm -f 3-textgen-instruct-commands.sh
-for watermark_key_length in 10 20 30 40 50 100; do
+for watermark_key_length in 10 20 30; do
   tokens_count=$watermark_key_length
 
   for method in gumbel; do
