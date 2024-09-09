@@ -469,7 +469,7 @@ for (probs_name in c("empty", "best", "icl")) {
   difference_df[[probs_name]] <- cbind(
     probs_name,
     seq_len(nrow(df_probs_list[[probs_name]])),
-    df_probs_list[["true"]][, -c(1, 2)] - df_probs_list[[probs_name]][, -c(1, 2)]
+    df_probs_list[["true"]][, -c(1:2)] - df_probs_list[[probs_name]][, -c(1:2)]
   )
   names(difference_df[[probs_name]]) <-
     c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))

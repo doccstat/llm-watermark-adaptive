@@ -92,7 +92,9 @@ if args.method == "transform":
     test_stats = []
     def dist1(x, y): return transform_edit_score(x, y, gamma=args.gamma)
 
-    def test_stat1(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat1(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -107,7 +109,9 @@ if args.method == "transform":
     test_stats.append(test_stat1)
     def dist2(x, y): return transform_score(x, y)
 
-    def test_stat2(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat2(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -122,7 +126,9 @@ if args.method == "transform":
     test_stats.append(test_stat2)
     def dist3(x, y): return its_score(x, y, vocab_size=vocab_size)
 
-    def test_stat3(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat3(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -139,7 +145,9 @@ if args.method == "transform":
     def dist4(x, y): return itsl_score(
         x, y, vocab_size=vocab_size, gamma=args.gamma)
 
-    def test_stat4(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat4(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -173,7 +181,9 @@ elif args.method == "gumbel":
     def metric_ems(x, y, probs):
         return ems_score(x, y)
 
-    def test_stat_ems(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -193,7 +203,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_true(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0)
 
-    def test_stat_ems_adaptive_true(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_true(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -213,7 +225,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_1(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0)
 
-    def test_stat_ems_adaptive_empty_1(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_1(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -231,7 +245,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_2(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.001)
 
-    def test_stat_ems_adaptive_empty_2(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_2(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -249,7 +265,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_3(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.01)
 
-    def test_stat_ems_adaptive_empty_3(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_3(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -267,7 +285,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_4(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.1)
 
-    def test_stat_ems_adaptive_empty_4(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_4(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -285,7 +305,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_5(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.9)
 
-    def test_stat_ems_adaptive_empty_5(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_5(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -303,7 +325,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_6(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.8)
 
-    def test_stat_ems_adaptive_empty_6(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_6(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -321,7 +345,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_7(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.7)
 
-    def test_stat_ems_adaptive_empty_7(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_7(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -339,7 +365,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_8(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.6)
 
-    def test_stat_ems_adaptive_empty_8(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_8(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -357,7 +385,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_9(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.5)
 
-    def test_stat_ems_adaptive_empty_9(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_9(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -375,7 +405,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_10(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.4)
 
-    def test_stat_ems_adaptive_empty_10(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_10(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -393,7 +425,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_11(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.3)
 
-    def test_stat_ems_adaptive_empty_11(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_11(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -411,7 +445,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_12(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.2)
 
-    def test_stat_ems_adaptive_empty_12(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_12(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -429,7 +465,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_13(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.1)
 
-    def test_stat_ems_adaptive_empty_13(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_13(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -449,7 +487,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_1(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0)
 
-    def test_stat_ems_adaptive_best_1(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_1(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -467,7 +507,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_2(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.001)
 
-    def test_stat_ems_adaptive_best_2(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_2(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -485,7 +527,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_3(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.01)
 
-    def test_stat_ems_adaptive_best_3(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_3(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -503,7 +547,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_4(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.1)
 
-    def test_stat_ems_adaptive_best_4(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_4(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -521,7 +567,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_5(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.9)
 
-    def test_stat_ems_adaptive_best_5(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_5(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -539,7 +587,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_6(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.8)
 
-    def test_stat_ems_adaptive_best_6(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_6(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -557,7 +607,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_7(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.7)
 
-    def test_stat_ems_adaptive_best_7(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_7(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -575,7 +627,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_8(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.6)
 
-    def test_stat_ems_adaptive_best_8(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_8(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -593,7 +647,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_9(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.5)
 
-    def test_stat_ems_adaptive_best_9(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_9(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -611,7 +667,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_10(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.4)
 
-    def test_stat_ems_adaptive_best_10(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_10(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -629,7 +687,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_11(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.3)
 
-    def test_stat_ems_adaptive_best_11(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_11(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -647,7 +707,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_12(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.2)
 
-    def test_stat_ems_adaptive_best_12(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_12(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -665,7 +727,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_best_13(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.1)
 
-    def test_stat_ems_adaptive_best_13(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_best_13(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -685,7 +749,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_1(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0)
 
-    def test_stat_ems_adaptive_icl_1(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_1(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -703,7 +769,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_2(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.001)
 
-    def test_stat_ems_adaptive_icl_2(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_2(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -721,7 +789,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_3(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.01)
 
-    def test_stat_ems_adaptive_icl_3(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_3(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -739,7 +809,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_4(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.1)
 
-    def test_stat_ems_adaptive_icl_4(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_4(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -757,7 +829,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_5(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.9)
 
-    def test_stat_ems_adaptive_icl_5(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_5(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -775,7 +849,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_6(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.8)
 
-    def test_stat_ems_adaptive_icl_6(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_6(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -793,7 +869,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_7(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.7)
 
-    def test_stat_ems_adaptive_icl_7(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_7(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -811,7 +889,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_8(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.6)
 
-    def test_stat_ems_adaptive_icl_8(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_8(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -829,7 +909,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_9(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.5)
 
-    def test_stat_ems_adaptive_icl_9(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_9(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -847,7 +929,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_10(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.4)
 
-    def test_stat_ems_adaptive_icl_10(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_10(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -865,7 +949,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_11(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.3)
 
-    def test_stat_ems_adaptive_icl_11(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_11(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -883,7 +969,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_12(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.2)
 
-    def test_stat_ems_adaptive_icl_12(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_12(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -901,7 +989,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_icl_13(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 0.1)
 
-    def test_stat_ems_adaptive_icl_13(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_icl_13(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -925,7 +1015,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_exp_1(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
 
-    def test_stat_ems_adaptive_empty_exp_1(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_exp_1(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -949,7 +1041,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_exp_2(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
 
-    def test_stat_ems_adaptive_empty_exp_2(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_exp_2(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -967,13 +1061,19 @@ elif args.method == "gumbel":
     empty_probs_exp_3 = genfromtxt(
         args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
     )[Tindex, :]
-    empty_probs_exp_3 = np.minimum(np.where(empty_probs_exp_3 >= 0.1, 3 * empty_probs_exp_3, empty_probs_exp_3), 1.0)
+    empty_probs_exp_3 = np.minimum(
+        np.where(
+            empty_probs_exp_3 >= 0.1, 3 * empty_probs_exp_3, empty_probs_exp_3),
+        1.0
+    )
     empty_probs_exp_3 = torch.from_numpy(empty_probs_exp_3)
 
     def metric_ems_adaptive_empty_exp_3(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
 
-    def test_stat_ems_adaptive_empty_exp_3(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_exp_3(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -991,13 +1091,20 @@ elif args.method == "gumbel":
     empty_probs_exp_4 = genfromtxt(
         args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
     )[Tindex, :]
-    empty_probs_exp_4 = np.minimum(np.where(empty_probs_exp_4 >= 0.1, 2 * empty_probs_exp_4, empty_probs_exp_4), 1.0)
+    empty_probs_exp_4 = np.minimum(
+        np.where(
+            empty_probs_exp_4 >= 0.1, 2 * empty_probs_exp_4, empty_probs_exp_4
+        ),
+        1.0
+    )
     empty_probs_exp_4 = torch.from_numpy(empty_probs_exp_4)
 
     def metric_ems_adaptive_empty_exp_4(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
 
-    def test_stat_ems_adaptive_empty_exp_4(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_exp_4(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -1021,7 +1128,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_exp_5(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
 
-    def test_stat_ems_adaptive_empty_exp_5(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_exp_5(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -1039,13 +1148,19 @@ elif args.method == "gumbel":
     empty_probs_exp_6 = genfromtxt(
         args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
     )[Tindex, :]
-    empty_probs_exp_6 = np.where(empty_probs_exp_6 >= 0.1, 0.8 * empty_probs_exp_6 + 0.2, empty_probs_exp_6)
+    empty_probs_exp_6 = np.where(
+        empty_probs_exp_6 >= 0.1,
+        0.8 * empty_probs_exp_6 + 0.2,
+        empty_probs_exp_6
+    )
     empty_probs_exp_6 = torch.from_numpy(empty_probs_exp_6)
 
     def metric_ems_adaptive_empty_exp_6(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
 
-    def test_stat_ems_adaptive_empty_exp_6(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_exp_6(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -1063,13 +1178,16 @@ elif args.method == "gumbel":
     empty_probs_exp_7 = genfromtxt(
         args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
     )[Tindex, :]
-    empty_probs_exp_7 = np.where(empty_probs_exp_7 <= 1e-6, 0.9, empty_probs_exp_7)
+    empty_probs_exp_7 = np.where(
+        empty_probs_exp_7 <= 1e-6, 0.9, empty_probs_exp_7)
     empty_probs_exp_7 = torch.from_numpy(empty_probs_exp_7)
 
     def metric_ems_adaptive_empty_exp_7(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
 
-    def test_stat_ems_adaptive_empty_exp_7(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_exp_7(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -1093,7 +1211,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_exp_8(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
 
-    def test_stat_ems_adaptive_empty_exp_8(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_exp_8(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -1117,7 +1237,9 @@ elif args.method == "gumbel":
     def metric_ems_adaptive_empty_exp_9(x, y, probs):
         return ems_adaptive(x, y, probs, 1.0, 0.0, 0.0, 1.0)
 
-    def test_stat_ems_adaptive_empty_exp_9(tokens, n, k, generator, vocab_size, null=False):
+    def test_stat_ems_adaptive_empty_exp_9(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
         return phi(
             tokens=tokens,
             n=n,
@@ -1138,7 +1260,9 @@ else:
 # Don't forget to remove the folder following the readme file,
 # if the experiment needs re-running.
 try:
-    with open(f"{args.token_file}-detect/watermarked-{args.Tindex}.csv", 'r') as f:
+    with open(
+        f"{args.token_file}-detect/watermarked-{args.Tindex}.csv", 'r'
+    ) as f:
         reader = csv.reader(f)
         if len(next(reader)) == len(test_stats):
             sys.exit()

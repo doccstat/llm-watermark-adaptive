@@ -458,7 +458,7 @@ if not args.gpt_prompt_key:
     pbar = tqdm(total=n_batches)
     for batch in range(n_batches):
         idx = torch.arange(batch * args.batch_size,
-                        min(T, (batch + 1) * args.batch_size))
+                           min(T, (batch + 1) * args.batch_size))
 
         null_sample, _, _ = generate_rnd(
             torch.vstack(icl_samples)[idx], prompt_tokens + buffer_tokens,
