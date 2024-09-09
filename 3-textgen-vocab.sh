@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=textgen
+#SBATCH --job-name=textgen-vocab
 #SBATCH --ntasks=128
 #SBATCH --ntasks-per-node=128
 #SBATCH --cpus-per-task=1
@@ -10,8 +10,8 @@
 #SBATCH --gres=gpu:a30:2
 
 #SBATCH --mem=128GB
-#SBATCH --output=/home/anthony.li/out/textgen.%A.%a.out
-#SBATCH --error=/home/anthony.li/out/textgen.%A.%a.err
+#SBATCH --output=/home/anthony.li/out/textgen-vocab.%A.%a.out
+#SBATCH --error=/home/anthony.li/out/textgen-vocab.%A.%a.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
 #SBATCH --array=1-150%2
@@ -31,8 +31,8 @@ export PATH="/home/anthony.li/.local/bin:$PATH"
 export PYTHONPATH=".":$PYTHONPATH
 export HF_HOME=/scratch/user/anthony.li/hf_cache
 
-# Determine the total number of commands by counting lines in 3-textgen-commands.sh
-total_commands=180
+# Determine the total number of commands by counting lines in 3-textgen-vocab-commands.sh
+total_commands=$(wc -l < 3-textgen-vocab-commands.sh)
 total_jobs=180
 
 # Calculate the number of commands per job (minimum)
@@ -54,7 +54,7 @@ echo "Running tasks for commands from $start_command to $end_command"
 
 # Loop over the designated commands for this job
 for i in $(seq $start_command $end_command); do
-    command=$(sed -n "${i}p" 3-textgen-commands.sh)
+    command=$(sed -n "${i}p" 3-textgen-vocab-commands.sh)
     echo "Executing command $i: $command"
     eval "$command"
 done

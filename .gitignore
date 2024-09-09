@@ -168,7 +168,8 @@ watermarking/transform/transform_levenshtein.c
 results/
 .Rhistory
 sshloginfile.txt
-3-textgen-commands.sh
+3-textgen-instruct-commands.sh
+3-textgen-vocab-commands.sh
 4-detect-commands.sh
 *.tar.gz
 .DS_Store
