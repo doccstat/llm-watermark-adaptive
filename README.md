@@ -88,15 +88,15 @@ for watermark_key_length in 10 20 30; do
             model="mistralai/Mistral-7B-v0.1"
           fi
 
-          echo "python 3-textgen-instruct.py --save results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 100 --tokens_count $tokens_count --buffer_tokens 0 --model $model --seed 1 --T 100 --method $method --${attack} $pcts --candidate_prompt_max 100 --gpt_prompt_key ''" >> 3-textgen-instruct-commands.sh
+          echo "python 3-textgen-instruct.py --save results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 100 --tokens_count $tokens_count --buffer_tokens 0 --model $model --seed 1 --T 1000 --method $method --${attack} $pcts --candidate_prompt_max 0 --gpt_prompt_key ''" >> 3-textgen-instruct-commands.sh
         done
       done
     done
   done
 done
 
-sbatch 3-textgen.sh
-# sacct -j <jobid> --format=JobID,JobName,State,ExitCode
+sbatch 3-textgen-instruct.sh
+# sacct -j <jobid> --format=JobID,JobName,State,ExitCode | grep textgen
 ```
 
 #### Expected running time
