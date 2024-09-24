@@ -80,7 +80,7 @@ for watermark_key_length in 10 20 30; do
 
   for method in gumbel; do
     for attack in deletion insertion substitution; do
-      for pcts in 0.0 0.05 0.1 0.2 0.3; do
+      for pcts in 0.0 0.1 0.2 0.3; do
         for model_prefix in ml3 mt7; do
           if [ "$model_prefix" = "ml3" ]; then
             model="meta-llama/Meta-Llama-3-8B"
@@ -120,7 +120,7 @@ for watermark_key_length in 10 20 30; do
 
   for method in gumbel; do
     for attack in deletion insertion substitution; do
-      for pcts in 0.0 0.05 0.1 0.2 0.3; do
+      for pcts in 0.0 0.1 0.2 0.3; do
         for model_prefix in ml3 mt7; do
           if [ "$model_prefix" = "ml3" ]; then
             model="meta-llama/Meta-Llama-3-8B"
@@ -130,7 +130,7 @@ for watermark_key_length in 10 20 30; do
 
           rm -rf results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p-detect
           mkdir -p results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p-detect
-          for Tindex in $(seq 0 99); do
+          for Tindex in $(seq 0 999); do
             echo "python 4-detect.py --token_file results/${model_prefix}-${method}-${attack}-${watermark_key_length}-${tokens_count}-${pcts}.p --n ${watermark_key_length} --model ${model} --seed 1 --Tindex ${Tindex} --k ${tokens_count} --method ${method} --n_runs 999" >> 4-detect-commands.sh
           done
         done

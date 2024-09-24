@@ -13,7 +13,7 @@
 #SBATCH --error=/home/anthony.li/out/textgen-instruct.%A.%a.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
-#SBATCH --array=1-90%9
+#SBATCH --array=1-72%9
 
 module purge
 module load Python/3.11.5-GCCcore-13.2.0
@@ -32,7 +32,7 @@ export HF_HOME=/scratch/user/anthony.li/hf_cache
 
 # Determine the total number of commands by counting lines in 3-textgen-instruct-commands.sh
 total_commands=$(wc -l < 3-textgen-instruct-commands.sh)
-total_jobs=90
+total_jobs=72
 
 # Calculate the number of commands per job (minimum)
 commands_per_job=$((total_commands / total_jobs))
