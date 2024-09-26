@@ -17,6 +17,7 @@ from watermarking.gumbel.score import ems_score, ems_adaptive
 from watermarking.gumbel.key import gumbel_key_func
 
 import argparse
+import os.path
 
 import csv
 import sys
@@ -1259,15 +1260,14 @@ else:
 
 # Don't forget to remove the folder following the readme file,
 # if the experiment needs re-running.
-try:
+if os.path.exists(f"{args.token_file}-detect/watermarked-{args.Tindex}.csv"):
     with open(
         f"{args.token_file}-detect/watermarked-{args.Tindex}.csv", 'r'
     ) as f:
         reader = csv.reader(f)
-        if len(next(reader)) == len(test_stats):
+        first_row = next(reader, None)
+        if first_row is not None and len(first_row) == len(test_stats):
             sys.exit()
-except:
-    pass
 
 
 def test(tokens, seed, test_stats):

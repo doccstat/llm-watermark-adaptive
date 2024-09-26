@@ -11,7 +11,7 @@ def substitution_attack(tokens, p, vocab_size, distribution=None):
     samples = torch.multinomial(new_probs, 1).flatten()
     tokens[idx] = samples[idx]
 
-    return tokens
+    return tokens, idx
 
 
 def deletion_attack(tokens, p):
@@ -21,7 +21,7 @@ def deletion_attack(tokens, p):
     keep[idx] = False
     tokens = tokens[keep]
 
-    return tokens
+    return tokens, idx
 
 
 def insertion_attack(tokens, p, vocab_size, distribution=None):
@@ -36,4 +36,4 @@ def insertion_attack(tokens, p, vocab_size, distribution=None):
         tokens = torch.cat([tokens[:i], samples[i], tokens[i:]])
         tokens[i] = samples[i]
 
-    return tokens
+    return tokens, idx

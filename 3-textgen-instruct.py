@@ -112,11 +112,13 @@ except:
 
 
 def corrupt(tokens):
-    tokens = deletion_attack(tokens, args.deletion)
-    tokens = insertion_attack(tokens, args.insertion, eff_vocab_size)
-    tokens = substitution_attack(tokens, args.substitution, eff_vocab_size)
+    tokens, deletion_idx = deletion_attack(tokens, args.deletion)
+    tokens, insertion_idx = insertion_attack(
+        tokens, args.insertion, eff_vocab_size)
+    tokens, substitution_idx = substitution_attack(
+        tokens, args.substitution, eff_vocab_size)
 
-    return tokens
+    return tokens, deletion_idx, insertion_idx, substitution_idx
 
 
 T = args.T                  # number of prompts/generations
@@ -394,6 +396,9 @@ if args.method == "transform":
     pi_save = open(args.save + "-pi.csv", "w")
     pi_writer = csv.writer(pi_save, delimiter=",")
 
+attacked_idx_save = open(args.save + "-attacked-idx.csv", "w")
+attacked_idx_writer = csv.writer(attacked_idx_save, delimiter=",")
+
 attacked_samples = copy.deepcopy(watermarked_samples)
 icl_samples = []
 icl_prompts = []
@@ -403,7 +408,14 @@ icl_prompt_max_length = 0
 pbar = tqdm(total=T)
 for itm in range(T):
     watermarked_sample = watermarked_samples[itm]
-    watermarked_sample = corrupt(watermarked_sample)
+    watermarked_sample, deletion_idx, insertion_idx, substitution_idx = corrupt(
+        watermarked_sample)
+    if args.deletion > 0:
+        attacked_idx_writer.writerow(np.asarray(deletion_idx.numpy()))
+    elif args.insertion > 0:
+        attacked_idx_writer.writerow(np.asarray(insertion_idx.numpy()))
+    elif args.substitution > 0:
+        attacked_idx_writer.writerow(np.asarray(substitution_idx.numpy()))
     watermarked_sample = tokenizer.decode(
         watermarked_sample, skip_special_tokens=True)
     if args.rt_translate:
@@ -451,6 +463,7 @@ log_file.write(f'Attacked the samples in (t = {time()-t1} seconds)\n')
 log_file.flush()
 log_file.close()
 attacked_tokens_save.close()
+attacked_idx_save.close()
 
 # Pad the icl samples to the maximum length.
 icl_samples = [
