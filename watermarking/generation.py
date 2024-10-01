@@ -108,6 +108,72 @@ def generate(
         empty_sampling_probs.detach().cpu()
     )
 
+def get_probs(
+        model, prompts, vocab_size, n, m, seeds, key_func, fixed_inputs
+):
+    """
+    Obtain the sampling probabilities for generated sequences using a language model.
+
+    Args:
+        model (torch.nn.Module): The language model.
+        prompts (torch.Tensor): The input prompts for generation.
+        vocab_size (int): The size of the vocabulary.
+        n (int): The number of watermarked sequences.
+        m (int): The number of tokens to generate.
+        seeds (List[int]): The seeds for random number generation.
+        key_func (Callable): The function to generate watermark keys.
+        fixed_inputs (torch.Tensor): The fixed inputs for generation.
+            Defaults to None.
+
+    Returns:
+        torch.Tensor: sampling probabilities.
+    """
+    batch_size = len(prompts)
+
+    generator = torch.Generator()
+    xis, pis = [], []
+    for seed in seeds:
+        generator.manual_seed(int(seed))
+        xi, pi = key_func(generator, n, vocab_size)
+        xis.append(xi.unsqueeze(0))
+        pis.append(pi.unsqueeze(0))
+    xis = torch.vstack(xis)
+    pis = torch.vstack(pis)
+
+    inputs = prompts.to(model.device)
+    sampling_probs = torch.zeros((batch_size, 0)).to(model.device)
+    attn = torch.ones_like(inputs)
+
+    past = None
+
+    for i in range(m):
+        with torch.no_grad():
+            if past:
+                output = model(
+                    inputs[:, -1:],
+                    past_key_values=past,
+                    attention_mask=attn
+                )
+            else:
+                output = model(inputs)
+
+        probs = torch.nn.functional.softmax(
+            output.logits[:, -1], dim=-1)
+
+        tokens = fixed_inputs[:, i].unsqueeze(1)
+        tokens = tokens.to(model.device)
+        sampling_prob = torch.gather(probs, 1, tokens)
+
+        sampling_probs = torch.cat(
+            [sampling_probs, sampling_prob], dim=-1)
+
+        inputs = torch.cat([inputs, tokens], dim=-1)
+        past = output.past_key_values
+        attn = torch.cat(
+            [attn, attn.new_ones((attn.shape[0], 1))], dim=-1)
+
+    return sampling_probs.detach().cpu()
+
 # generate unwatermarked completions of token length m given list of prompts
 
 

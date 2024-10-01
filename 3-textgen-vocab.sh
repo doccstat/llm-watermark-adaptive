@@ -1,20 +1,19 @@
 #!/bin/bash
 
 #SBATCH --job-name=textgen-vocab
-#SBATCH --ntasks=128
-#SBATCH --ntasks-per-node=128
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 
 #SBATCH --time=1-00:00:00
 #SBATCH --partition=gpu,xgpu
 #SBATCH --gres=gpu:a30:2
 
-#SBATCH --mem=128GB
+#SBATCH --mem=5GB
 #SBATCH --output=/home/anthony.li/out/textgen-vocab.%A.%a.out
 #SBATCH --error=/home/anthony.li/out/textgen-vocab.%A.%a.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
-#SBATCH --array=1-150%2
+#SBATCH --array=1-150
 
 module purge
 module load Python/3.11.5-GCCcore-13.2.0
@@ -33,7 +32,7 @@ export HF_HOME=/scratch/user/anthony.li/hf_cache
 
 # Determine the total number of commands by counting lines in 3-textgen-vocab-commands.sh
 total_commands=$(wc -l < 3-textgen-vocab-commands.sh)
-total_jobs=180
+total_jobs=150
 
 # Calculate the number of commands per job (minimum)
 commands_per_job=$((total_commands / total_jobs))

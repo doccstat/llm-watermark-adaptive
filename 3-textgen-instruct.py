@@ -14,7 +14,7 @@ import copy
 
 import numpy as np
 
-from watermarking.generation import generate, generate_rnd, gpt_prompt
+from watermarking.generation import generate, generate_rnd, gpt_prompt, get_probs
 from watermarking.attacks import deletion_attack, insertion_attack, substitution_attack
 
 from watermarking.transform.sampler import transform_sampling
@@ -212,6 +212,17 @@ elif args.method == "gumbel":
             empty_prompts=empty_prompts,
             fixed_inputs=fixed_inputs
         )
+    def get_probabilities(prompt, seed, fixed_inputs):
+        return get_probs(
+            model,
+            prompt,
+            vocab_size,
+            n,
+            new_tokens+buffer_tokens,
+            seed,
+            gumbel_key_func,
+            fixed_inputs
+        )
 else:
     raise
 
@@ -249,23 +260,35 @@ prompts = torch.vstack(prompts)
 
 # Generate the candidate prompts that will be used to find the best suited
 # prompt for the attacked watermarked texts.
-candidate_prompts = []
-with open("example/outputs.json") as file:
-    example_outputs = json.load(file)
-    for example_output in example_outputs:
-        candidate_prompt = example_output['instruction']
-        candidate_token = tokenizer.encode(
-            candidate_prompt,
-            return_tensors='pt',
-            truncation=True,
-            max_length=2048-buffer_tokens
-        )[0]
-        candidate_prompts.append(
-            torch.vstack([candidate_token for _ in range(T)])
-        )
+if False:
+    candidate_prompts = []
+    with open("example/outputs.json") as file:
+        example_outputs = json.load(file)
+        for example_output in example_outputs:
+            candidate_prompt = example_output['instruction']
+            candidate_token = tokenizer.encode(
+                candidate_prompt,
+                return_tensors='pt',
+                truncation=True,
+                max_length=2048-buffer_tokens
+            )[0]
+            candidate_prompts.append(
+                torch.vstack([candidate_token for _ in range(T)])
+            )
 
-if args.candidate_prompt_max >= 0:
-    candidate_prompts = candidate_prompts[:args.candidate_prompt_max]
+    if args.candidate_prompt_max >= 0:
+        candidate_prompts = candidate_prompts[:args.candidate_prompt_max]
+else:
+    candidate_prompts = []
+    prompt_copy = copy.deepcopy(prompts)
+    for i in range(T):
+        idx = torch.randint(0, prompt_tokens, (int(0.1*prompt_tokens),))
+        # prompt_copy[i, idx] = torch.randint(
+        #     0, eff_vocab_size, (int(0.1*prompt_tokens),))
+        prompt_copy[i, idx] = 0
+        candidate_prompts.append(
+            torch.vstack([prompt_copy[i] for _ in range(T)])
+        )
 
 empty_prompt_save = open(args.save + '-empty-prompt.txt', 'w')
 if args.model == "facebook/opt-1.3b":
@@ -461,7 +484,6 @@ for itm in range(T):
 pbar.close()
 log_file.write(f'Attacked the samples in (t = {time()-t1} seconds)\n')
 log_file.flush()
-log_file.close()
 attacked_tokens_save.close()
 attacked_idx_save.close()
 
@@ -508,6 +530,7 @@ re_calculated_probs = []
 re_calculated_best_probs = []
 re_calculated_empty_probs = []
 re_calculated_icl_probs = []
+best_prompt = []
 
 re_calculated_probs_save = open(
     args.save + "-re-calculated-probs.csv", "w")
@@ -525,23 +548,30 @@ re_calculated_icl_probs_save = open(
     args.save + "-re-calculated-icl-probs.csv", "w")
 re_calculated_icl_probs_writer = csv.writer(
     re_calculated_icl_probs_save, delimiter=",")
+best_prompt_save = open(args.save + '-best-prompt.csv', 'w')
+best_prompt_writer = csv.writer(best_prompt_save, delimiter=",")
 
-pbar = tqdm(total=n_batches * len(candidate_prompts))
+pbar = tqdm(total=n_batches * 100)  # 100 is the number of considered prompts
 for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
                        min(T, (batch + 1) * args.batch_size))
 
+    candidate_prompts_subset = [
+        candidate_prompts[itm] for itm in idx.tolist()
+    ]
+    candidate_prompts_subset.append(candidate_prompts[-2])
+    candidate_prompts_subset.append(candidate_prompts[-1])
     candidate_probs = []
-    for candidate_prompt_idx, candidate_prompt in enumerate(candidate_prompts):
+    for candidate_prompt_idx, candidate_prompt in enumerate(candidate_prompts_subset):
         _, watermarked_prob, watermarked_empty_prob = generate_watermark(
             prompts[idx], seeds[idx], candidate_prompt[idx],
             fixed_inputs=attacked_samples[idx])
         candidate_probs.append(watermarked_empty_prob)
         if candidate_prompt_idx == 0:
             re_calculated_probs.append(watermarked_prob)
-        if candidate_prompt_idx == len(candidate_prompts) - 2:
+        if candidate_prompt_idx == len(candidate_prompts_subset) - 2:
             re_calculated_empty_probs.append(watermarked_empty_prob)
-        elif candidate_prompt_idx == len(candidate_prompts) - 1:
+        elif candidate_prompt_idx == len(candidate_prompts_subset) - 1:
             re_calculated_icl_probs.append(watermarked_empty_prob)
 
         pbar.update(1)
@@ -557,6 +587,15 @@ for batch in range(n_batches):
     re_calculated_best_probs.append(
         candidate_probs[best_candidate_idx, torch.arange(len(idx)), :]
     )
+    best_prompt.extend(candidate_prompts_subset[bc_idx][0] for bc_idx in best_candidate_idx.tolist())
+
+best_prompt = [
+    torch.nn.functional.pad(
+        best_prompt[itm], (0, prompt_tokens - len(best_prompt[itm])),
+        "constant", 0
+    ) for itm in range(T)
+]
+best_prompt = torch.vstack(best_prompt)
 
 pbar.close()
 re_calculated_probs = torch.vstack(re_calculated_probs)
@@ -572,9 +611,283 @@ for itm in range(T):
         np.asarray(re_calculated_empty_probs[itm].numpy()))
     re_calculated_icl_probs_writer.writerow(
         np.asarray(re_calculated_icl_probs[itm].numpy()))
+    best_prompt_writer.writerow(np.asarray(best_prompt[itm].numpy()))
 re_calculated_probs_save.close()
 re_calculated_best_probs_save.close()
 re_calculated_empty_probs_save.close()
 re_calculated_icl_probs_save.close()
+best_prompt_save.close()
+
+re_calculated_98_probs = []
+re_calculated_96_probs = []
+re_calculated_90_probs = []
+re_calculated_80_probs = []
+re_calculated_60_probs = []
+re_calculated_40_probs = []
+re_calculated_20_probs = []
+re_calculated_98_probs_save = open(
+    args.save + "-re-calculated-98-probs.csv", "w")
+re_calculated_98_probs_writer = csv.writer(
+    re_calculated_98_probs_save, delimiter=",")
+re_calculated_96_probs_save = open(
+    args.save + "-re-calculated-96-probs.csv", "w")
+re_calculated_96_probs_writer = csv.writer(
+    re_calculated_96_probs_save, delimiter=",")
+re_calculated_90_probs_save = open(
+    args.save + "-re-calculated-90-probs.csv", "w")
+re_calculated_90_probs_writer = csv.writer(
+    re_calculated_90_probs_save, delimiter=",")
+re_calculated_80_probs_save = open(
+    args.save + "-re-calculated-80-probs.csv", "w")
+re_calculated_80_probs_writer = csv.writer(
+    re_calculated_80_probs_save, delimiter=",")
+re_calculated_60_probs_save = open(
+    args.save + "-re-calculated-60-probs.csv", "w")
+re_calculated_60_probs_writer = csv.writer(
+    re_calculated_60_probs_save, delimiter=",")
+re_calculated_40_probs_save = open(
+    args.save + "-re-calculated-40-probs.csv", "w")
+re_calculated_40_probs_writer = csv.writer(
+    re_calculated_40_probs_save, delimiter=",")
+re_calculated_20_probs_save = open(
+    args.save + "-re-calculated-20-probs.csv", "w")
+re_calculated_20_probs_writer = csv.writer(
+    re_calculated_20_probs_save, delimiter=",")
+
+# Create modified prompts for the 20%, 40%, 60%, 80%, 90%, 96%, and 98% cases.
+candidate_98_prompts = []
+prompt_copy = copy.deepcopy(prompts)
+for i in range(T):
+    idx = torch.randint(0, prompt_tokens, (int(0.02*prompt_tokens),))
+    prompt_copy[i, idx] = 0
+    candidate_98_prompts.append(
+        torch.vstack([prompt_copy[i] for _ in range(T)])
+    )
+candidate_98_prompts = torch.vstack(candidate_98_prompts)
+candidate_96_prompts = []
+prompt_copy = copy.deepcopy(prompts)
+for i in range(T):
+    idx = torch.randint(0, prompt_tokens, (int(0.04*prompt_tokens),))
+    prompt_copy[i, idx] = 0
+    candidate_96_prompts.append(
+        torch.vstack([prompt_copy[i] for _ in range(T)])
+    )
+candidate_96_prompts = torch.vstack(candidate_96_prompts)
+candidate_90_prompts = []
+prompt_copy = copy.deepcopy(prompts)
+for i in range(T):
+    idx = torch.randint(0, prompt_tokens, (int(0.1*prompt_tokens),))
+    prompt_copy[i, idx] = 0
+    candidate_90_prompts.append(
+        torch.vstack([prompt_copy[i] for _ in range(T)])
+    )
+candidate_90_prompts = torch.vstack(candidate_90_prompts)
+candidate_80_prompts = []
+prompt_copy = copy.deepcopy(prompts)
+for i in range(T):
+    idx = torch.randint(0, prompt_tokens, (int(0.2*prompt_tokens),))
+    prompt_copy[i, idx] = 0
+    candidate_80_prompts.append(
+        torch.vstack([prompt_copy[i] for _ in range(T)])
+    )
+candidate_80_prompts = torch.vstack(candidate_80_prompts)
+candidate_60_prompts = []
+prompt_copy = copy.deepcopy(prompts)
+for i in range(T):
+    idx = torch.randint(0, prompt_tokens, (int(0.4*prompt_tokens),))
+    prompt_copy[i, idx] = 0
+    candidate_60_prompts.append(
+        torch.vstack([prompt_copy[i] for _ in range(T)])
+    )
+candidate_60_prompts = torch.vstack(candidate_60_prompts)
+candidate_40_prompts = []
+prompt_copy = copy.deepcopy(prompts)
+for i in range(T):
+    idx = torch.randint(0, prompt_tokens, (int(0.6*prompt_tokens),))
+    prompt_copy[i, idx] = 0
+    candidate_40_prompts.append(
+        torch.vstack([prompt_copy[i] for _ in range(T)])
+    )
+candidate_40_prompts = torch.vstack(candidate_40_prompts)
+candidate_20_prompts = []
+prompt_copy = copy.deepcopy(prompts)
+for i in range(T):
+    idx = torch.randint(0, prompt_tokens, (int(0.8*prompt_tokens),))
+    prompt_copy[i, idx] = 0
+    candidate_20_prompts.append(
+        torch.vstack([prompt_copy[i] for _ in range(T)])
+    )
+candidate_20_prompts = torch.vstack(candidate_20_prompts)
+
+pbar = tqdm(total=n_batches)
+for batch in range(n_batches):
+    idx = torch.arange(batch * args.batch_size,
+                       min(T, (batch + 1) * args.batch_size))
+
+    _, _, watermarked_empty_prob = generate_watermark(
+        prompts[idx], seeds[idx], candidate_98_prompts[idx],
+        fixed_inputs=attacked_samples[idx])
+    re_calculated_98_probs.append(watermarked_empty_prob)
+
+    pbar.update(1)
+pbar.close()
+re_calculated_98_probs = torch.vstack(re_calculated_98_probs)
+for itm in range(T):
+    re_calculated_98_probs_writer.writerow(
+        np.asarray(re_calculated_98_probs[itm].numpy()))
+re_calculated_98_probs_save.close()
+
+pbar = tqdm(total=n_batches)
+for batch in range(n_batches):
+    idx = torch.arange(batch * args.batch_size,
+                       min(T, (batch + 1) * args.batch_size))
+
+    _, _, watermarked_empty_prob = generate_watermark(
+        prompts[idx], seeds[idx], candidate_96_prompts[idx],
+        fixed_inputs=attacked_samples[idx])
+    re_calculated_96_probs.append(watermarked_empty_prob)
+
+    pbar.update(1)
+pbar.close()
+re_calculated_96_probs = torch.vstack(re_calculated_96_probs)
+for itm in range(T):
+    re_calculated_96_probs_writer.writerow(
+        np.asarray(re_calculated_96_probs[itm].numpy()))
+re_calculated_96_probs_save.close()
+
+pbar = tqdm(total=n_batches)
+for batch in range(n_batches):
+    idx = torch.arange(batch * args.batch_size,
+                       min(T, (batch + 1) * args.batch_size))
+
+    _, _, watermarked_empty_prob = generate_watermark(
+        prompts[idx], seeds[idx], candidate_90_prompts[idx],
+        fixed_inputs=attacked_samples[idx])
+    re_calculated_90_probs.append(watermarked_empty_prob)
+
+    pbar.update(1)
+pbar.close()
+re_calculated_90_probs = torch.vstack(re_calculated_90_probs)
+for itm in range(T):
+    re_calculated_90_probs_writer.writerow(
+        np.asarray(re_calculated_90_probs[itm].numpy()))
+re_calculated_90_probs_save.close()
+
+pbar = tqdm(total=n_batches)
+for batch in range(n_batches):
+    idx = torch.arange(batch * args.batch_size,
+                       min(T, (batch + 1) * args.batch_size))
+
+    _, _, watermarked_empty_prob = generate_watermark(
+        prompts[idx], seeds[idx], candidate_80_prompts[idx],
+        fixed_inputs=attacked_samples[idx])
+    re_calculated_80_probs.append(watermarked_empty_prob)
+
+    pbar.update(1)
+pbar.close()
+re_calculated_80_probs = torch.vstack(re_calculated_80_probs)
+for itm in range(T):
+    re_calculated_80_probs_writer.writerow(
+        np.asarray(re_calculated_80_probs[itm].numpy()))
+re_calculated_80_probs_save.close()
+
+pbar = tqdm(total=n_batches)
+for batch in range(n_batches):
+    idx = torch.arange(batch * args.batch_size,
+                       min(T, (batch + 1) * args.batch_size))
+
+    _, _, watermarked_empty_prob = generate_watermark(
+        prompts[idx], seeds[idx], candidate_60_prompts[idx],
+        fixed_inputs=attacked_samples[idx])
+    re_calculated_60_probs.append(watermarked_empty_prob)
+
+    pbar.update(1)
+pbar.close()
+re_calculated_60_probs = torch.vstack(re_calculated_60_probs)
+for itm in range(T):
+    re_calculated_60_probs_writer.writerow(
+        np.asarray(re_calculated_60_probs[itm].numpy()))
+re_calculated_60_probs_save.close()
+
+pbar = tqdm(total=n_batches)
+for batch in range(n_batches):
+    idx = torch.arange(batch * args.batch_size,
+                       min(T, (batch + 1) * args.batch_size))
+
+    _, _, watermarked_empty_prob = generate_watermark(
+        prompts[idx], seeds[idx], candidate_40_prompts[idx],
+        fixed_inputs=attacked_samples[idx])
+    re_calculated_40_probs.append(watermarked_empty_prob)
+
+    pbar.update(1)
+pbar.close()
+re_calculated_40_probs = torch.vstack(re_calculated_40_probs)
+for itm in range(T):
+    re_calculated_40_probs_writer.writerow(
+        np.asarray(re_calculated_40_probs[itm].numpy()))
+re_calculated_40_probs_save.close()
+
+pbar = tqdm(total=n_batches)
+for batch in range(n_batches):
+    idx = torch.arange(batch * args.batch_size,
+                       min(T, (batch + 1) * args.batch_size))
+
+    _, _, watermarked_empty_prob = generate_watermark(
+        prompts[idx], seeds[idx], candidate_20_prompts[idx],
+        fixed_inputs=attacked_samples[idx])
+    re_calculated_20_probs.append(watermarked_empty_prob)
+
+    pbar.update(1)
+pbar.close()
+re_calculated_20_probs = torch.vstack(re_calculated_20_probs)
+for itm in range(T):
+    re_calculated_20_probs_writer.writerow(
+        np.asarray(re_calculated_20_probs[itm].numpy()))
+re_calculated_20_probs_save.close()
+
+
+if False:
+    re_constructed_prompts = []
+    re_constructed_prompts_save = open(
+        args.save + "-re-constructed-prompts.csv", "w")
+    re_constructed_prompts_writer = csv.writer(
+        re_constructed_prompts_save, delimiter=",")
+    pbar = tqdm(total=T * 50 * 100)
+    for itm in range(T):
+        reconstructed_prompt = torch.zeros((1, 0), dtype=torch.long)
+        for _ in range(50):
+            broadcasted_prompt = torch.cat(
+                (reconstructed_prompt, prompts[[itm]]), dim=1)
+            broadcasted_prompt = torch.vstack(
+                [broadcasted_prompt for _ in range(vocab_size)])
+            broadcasted_prompt = torch.cat(
+                (torch.arange(vocab_size).unsqueeze(1), broadcasted_prompt), dim=1)
+
+            watermarked_empty_prob = []
+            vocab_size_split = torch.ceil(torch.tensor(vocab_size / 100)).long()
+            for batch in range(100):
+                idx = torch.arange(batch * vocab_size_split,
+                                min(vocab_size, (batch + 1) * vocab_size_split),
+                                dtype=torch.long)
+
+                watermarked_empty_prob_partial = get_probabilities(
+                    broadcasted_prompt[idx], seeds[[itm]],
+                    torch.vstack([attacked_samples[[itm]] for _ in range(len(idx))])
+                    )
+                watermarked_empty_prob.append(watermarked_empty_prob_partial)
+                pbar.update(1)
+            watermarked_empty_prob = torch.vstack(watermarked_empty_prob)
+            best_vocab = torch.argmax(torch.sum(torch.log(watermarked_empty_prob), 1))
+            reconstructed_prompt = torch.cat(
+                (torch.tensor([[best_vocab]]), reconstructed_prompt), dim=1)
+        re_constructed_prompts.append(reconstructed_prompt)
+        re_constructed_prompts_writer.writerow(
+            np.asarray(re_constructed_prompts[itm].numpy()))
+        re_constructed_prompts_save.flush()
+    pbar.close()
+    re_constructed_prompts = torch.vstack(re_constructed_prompts)
+    re_constructed_prompts_save.close()
+
 
 pickle.dump(results, open(args.save, "wb"))
+log_file.close()

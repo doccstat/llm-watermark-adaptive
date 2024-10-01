@@ -81,14 +81,14 @@ for watermark_key_length in 10 20 30; do
   for method in gumbel; do
     for attack in deletion insertion substitution; do
       for pcts in 0.0 0.1 0.2 0.3; do
-        for model_prefix in ml3 mt7; do
+        for model_prefix in ml3; do
           if [ "$model_prefix" = "ml3" ]; then
             model="meta-llama/Meta-Llama-3-8B"
           else
             model="mistralai/Mistral-7B-v0.1"
           fi
 
-          echo "python 3-textgen-instruct.py --save results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 100 --tokens_count $tokens_count --buffer_tokens 0 --model $model --seed 1 --T 1000 --method $method --${attack} $pcts --candidate_prompt_max 0 --gpt_prompt_key ''" >> 3-textgen-instruct-commands.sh
+          echo "python 3-textgen-instruct.py --save results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 100 --tokens_count $tokens_count --buffer_tokens 0 --model $model --seed 1 --T 500 --method $method --${attack} $pcts --candidate_prompt_max 0 --gpt_prompt_key ''" >> 3-textgen-instruct-commands.sh
         done
       done
     done
@@ -96,7 +96,31 @@ for watermark_key_length in 10 20 30; do
 done
 
 sbatch 3-textgen-instruct.sh
-# sacct -j <jobid> --format=JobID,JobName,State,ExitCode | grep textgen
+sacct -j 412046 --format=JobID,JobName,State,ExitCode | grep textgen
+
+rm -f 3-textgen-vocab-commands.sh
+for watermark_key_length in 10; do
+  tokens_count=$watermark_key_length
+
+  for method in gumbel; do
+    for attack in deletion; do
+      for pcts in 0.0; do
+        for model_prefix in ml3 mt7; do
+          if [ "$model_prefix" = "ml3" ]; then
+            model="meta-llama/Meta-Llama-3-8B"
+          else
+            model="mistralai/Mistral-7B-v0.1"
+          fi
+
+          echo "python 3-textgen-vocab.py --save results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p --watermark_key_length $watermark_key_length --batch_size 100 --tokens_count $tokens_count --buffer_tokens 0 --model $model --seed 1 --T 100 --method $method --${attack} $pcts --gpt_prompt_key ''" >> 3-textgen-vocab-commands.sh
+        done
+      done
+    done
+  done
+done
+
+sbatch 3-textgen-vocab.sh
+sacct -j 406611 --format=JobID,JobName,State,ExitCode | grep textgen
 ```
 
 #### Expected running time
@@ -120,7 +144,7 @@ for watermark_key_length in 10 20 30; do
 
   for method in gumbel; do
     for attack in deletion insertion substitution; do
-      for pcts in 0.0 0.1 0.2 0.3; do
+      for pcts in 0.1 0.2 0.3; do
         for model_prefix in ml3 mt7; do
           if [ "$model_prefix" = "ml3" ]; then
             model="meta-llama/Meta-Llama-3-8B"
@@ -130,8 +154,8 @@ for watermark_key_length in 10 20 30; do
 
           rm -rf results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p-detect
           mkdir -p results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts.p-detect
-          for Tindex in $(seq 0 999); do
-            echo "python 4-detect.py --token_file results/${model_prefix}-${method}-${attack}-${watermark_key_length}-${tokens_count}-${pcts}.p --n ${watermark_key_length} --model ${model} --seed 1 --Tindex ${Tindex} --k ${tokens_count} --method ${method} --n_runs 999" >> 4-detect-commands.sh
+          for Tindex in $(seq 0 99); do
+            echo "python 4-detect.py --token_file results/${model_prefix}-${method}-${attack}-${watermark_key_length}-${tokens_count}-${pcts}.p --n ${watermark_key_length} --model ${model} --seed 1 --Tindex ${Tindex} --k 5 --method ${method} --n_runs 99" >> 4-detect-commands.sh
           done
         done
       done
@@ -139,8 +163,9 @@ for watermark_key_length in 10 20 30; do
   done
 done
 
-# sbatch --dependency=afterok:<jobid> 4-detect.sh
+# sbatch --dependency=afterok:409989 4-detect.sh
 sbatch 4-detect.sh
+sacct -j 412608 --format=JobID,JobName,State,ExitCode | grep detect | grep COMPLETED | wc -l
 ```
 
 #### Collect results
@@ -182,4 +207,33 @@ tokenizer.decode([33235,430,279,9578,374,264,26436,574,14592,505,279,12917,315,1
 # text
 tokenizer.decode([374,279,9647,315,279,88931,16483,13,8595,433,374,430,584,527,6982,912,3585,315,70000,1990], skip_special_tokens=True)
 # ' is the opinion of the foregoing writers. Why it is that we are shown no points of resemblance between'
+
+tokenizer = AutoTokenizer.from_pretrained("/scratch/user/anthony.li/models/" + "mistralai/Mistral-7B-v0.1" + "/tokenizer")
+tokenizer.decode([1,315,837,1404,298,1464,298,712,529,264,18958,438,1611,354,7812,3322,2449,456,879,28723,1824,7108,304,9804,511,315,927,298,10130,625,264,18958,712,13072,28804])
+# '<s> I am going to try to roast a pig at home for Thanksgiving this year. What equipment and techniques do I need to successfully get a pig roasted?'
+tokenizer.decode([1418,4349,28705,28750,28734,28725,28705,28750,28734,28734])
+# 'On November 20, 200'
+```
+
+scontrol -o show nodes | awk '{ print $1, $4, $10, $18, $25, $26, $27}'
+scontrol -d show job 389854 | grep Reason
+
+```r
+# >>> import torch
+# r, AutoModelForCausalLM
+# tokenizer = AutoTokenizer.from_pretrained("/scratch/user/anthony.li/models/" + "openai-community/gpt2" + "/tokenizer")
+# >>> from transformers import AutoTokenizer, AutoModelForCausalLM
+# >>> tokenizer = AutoTokenizer.from_pretrained("/scratch/user/anthony.li/models/" + "openai-community/gpt2" + "/tokenizer")
+# >>> tokenizer.decode([34442, 37250, 31524, 17241, 18161, 23068, 26933, 2061, 22222, 2131, 1980, 8888, 20954, 49366, 43984, 21474, 2150, 26792, 8135, 39738])
+'advertising [\'Basically],"."[ (£([WhatinburghciallyircTodayésworldlyBangchtungingessk neuroscience'
+# >>> tokenizer.decode([74,710,21474,2150,82,4914,928,494,12340,11769])
+'knechtungskaologie"), Wales'
+# >>> tokenizer.decode([7743,286,6156,4903,34063,11,290,465,4901,287,262,6224,286,262,32867,4147,373,2192,12824,416,262,5504,543,262,6156,8685,23291,10321,2921,286,511,35724,13,770,11,379,1551,11,318,262,4459,286,371,3087,3900,5855,42,1980,31753,274])
+' teaching of ancient geographers, and his belief in the existence of the antipodes was probably influenced by the accounts which the ancient Irish voyagers gave of their journeys. This, at least, is the opinion of Rettberg ("Kirchenges'
+# >>> tokenizer.decode([679,338,257,845,922,393,1049,3985,13,198])
+" He's a very good or great coach.\n"
+# >>> tokenizer.decode([14536,422,3050,12,1314,11,326,339,373,257,1310,3491,19554,694,13,198,1537,1754,318,7725,326,530,1110,339,460,2666,257,10655,588,27059,259,393,5030,13,887,329,783,11,465,3061,318,284,5879,644,339,1541,5804,318,2081,25])
+' Lions from 2010-15, that he was a little starstruck.\nButler is hoping that one day he can leave a legacy like Boldin or Johnson. But for now, his goal is to prove what he already believes is true:'
+# >>> tokenizer.decode([29582,39737,50256,1639,257,845,922,18680,30906,3985,32904,49537,50256,464,393,3064,8842,3985,42597,44962])
+' Pastebinquished<|endoftext|>You a very good mightyrawdownloadcloneembedreportprint coach miracles Heisman<|endoftext|>The or100 fantasy coachSHAREGOP'
 ```

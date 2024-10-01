@@ -13,7 +13,7 @@
 #SBATCH --error=/home/anthony.li/out/textgen-instruct.%A.%a.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
-#SBATCH --array=1-72%9
+#SBATCH --array=1-72
 
 module purge
 module load Python/3.11.5-GCCcore-13.2.0

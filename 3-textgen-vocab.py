@@ -5,6 +5,8 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import MarianMTModel, MarianTokenizer
 
+from accelerate import Accelerator
+
 from datasets import load_dataset, load_from_disk
 
 from tqdm import tqdm
@@ -14,7 +16,7 @@ import copy
 
 import numpy as np
 
-from watermarking.generation import generate, generate_rnd, gpt_prompt
+from watermarking.generation import generate, generate_rnd, gpt_prompt, get_probs
 from watermarking.attacks import deletion_attack, insertion_attack, substitution_attack
 
 from watermarking.transform.sampler import transform_sampling
@@ -73,25 +75,22 @@ log_file = open('log/textgen.log', 'w')
 log_file.write(str(args) + '\n')
 log_file.flush()
 
+accelerator = Accelerator()
+
 # fix the random seed for reproducibility
 t0 = time()
 torch.manual_seed(args.seed)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-try:
-    tokenizer = AutoTokenizer.from_pretrained(
-        "/scratch/user/anthony.li/models/" + args.model + "/tokenizer")
-    model = AutoModelForCausalLM.from_pretrained(
-        "/scratch/user/anthony.li/models/" + args.model + "/model",
-        device_map='auto'
-    )
+tokenizer = AutoTokenizer.from_pretrained(
+    "/scratch/user/anthony.li/models/" + args.model + "/tokenizer")
+model = AutoModelForCausalLM.from_pretrained(
+    "/scratch/user/anthony.li/models/" + args.model + "/model",
+    device_map='auto'
+)
+model = accelerator.prepare(model)
 
-    log_file.write(f'Loaded the local model\n')
-except:
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
-    model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
-    log_file.write(f'Loaded the model\n')
-
+log_file.write(f'Loaded the local model\n')
 log_file.flush()
 
 vocab_size = model.get_output_embeddings().weight.shape[0]
@@ -99,6 +98,7 @@ eff_vocab_size = vocab_size - args.truncate_vocab
 log_file.write(f'Loaded the model (t = {time()-t0} seconds)\n')
 log_file.flush()
 
+# Load the dataset from the disk or download it from the Hugging Face Hub.
 try:
     dataset = load_from_disk(
         '/scratch/user/anthony.li/datasets/allenai/c4/realnewslike/train'
@@ -109,9 +109,9 @@ except:
 
 
 def corrupt(tokens):
-    tokens = deletion_attack(tokens, args.deletion)
-    tokens = insertion_attack(tokens, args.insertion, eff_vocab_size)
-    tokens = substitution_attack(tokens, args.substitution, eff_vocab_size)
+    tokens, _ = deletion_attack(tokens, args.deletion)
+    tokens, _ = insertion_attack(tokens, args.insertion, eff_vocab_size)
+    tokens, _ = substitution_attack(tokens, args.substitution, eff_vocab_size)
 
     return tokens
 
@@ -207,6 +207,17 @@ elif args.method == "gumbel":
             empty_prompts=empty_prompts,
             fixed_inputs=fixed_inputs
         )
+    def get_probabilities(prompt, seed, fixed_inputs):
+        return get_probs(
+            model,
+            prompt,
+            vocab_size,
+            n,
+            new_tokens+buffer_tokens,
+            seed,
+            gumbel_key_func,
+            fixed_inputs
+        )
 else:
     raise
 
@@ -285,6 +296,7 @@ watermarked_probs = []
 null_empty_probs = []
 watermarked_empty_probs = []
 
+# Generate the null and watermarked samples.
 pbar = tqdm(total=n_batches)
 for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
@@ -435,7 +447,6 @@ for itm in range(T):
 pbar.close()
 log_file.write(f'Attacked the samples in (t = {time()-t1} seconds)\n')
 log_file.flush()
-log_file.close()
 attacked_tokens_save.close()
 
 # Pad the icl samples to the maximum length.
@@ -477,97 +488,59 @@ for icl_prompt in icl_prompts:
     icl_prompt_writer.writerow(np.asarray(icl_prompt.numpy()))
 icl_prompt_save.close()
 
-re_calculated_probs = []
 re_calculated_best_probs = []
-re_calculated_empty_probs = []
-re_calculated_icl_probs = []
 re_constructed_prompts = []
 
-re_calculated_probs_save = open(
-    args.save + "-re-calculated-probs.csv", "w")
-re_calculated_probs_writer = csv.writer(
-    re_calculated_probs_save, delimiter=",")
 re_calculated_best_probs_save = open(
     args.save + "-re-calculated-best-probs.csv", "w")
 re_calculated_best_probs_writer = csv.writer(
     re_calculated_best_probs_save, delimiter=",")
-re_calculated_empty_probs_save = open(
-    args.save + "-re-calculated-empty-probs.csv", "w")
-re_calculated_empty_probs_writer = csv.writer(
-    re_calculated_empty_probs_save, delimiter=",")
-re_calculated_icl_probs_save = open(
-    args.save + "-re-calculated-icl-probs.csv", "w")
-re_calculated_icl_probs_writer = csv.writer(
-    re_calculated_icl_probs_save, delimiter=",")
 re_constructed_prompts_save = open(
     args.save + "-re-constructed-prompts.csv", "w")
 re_constructed_prompts_writer = csv.writer(
     re_constructed_prompts_save, delimiter=",")
 
-pbar = tqdm(total=n_batches * prompt_tokens * len(candidate_prompts))
-for batch in range(n_batches):
-    idx = torch.arange(batch * args.batch_size,
-                       min(T, (batch + 1) * args.batch_size))
-
-    reconstructed_prompt = torch.zeros((0, prompt_tokens), dtype=torch.long)
-    for _ in range(prompt_tokens):
-        candidate_probs = []
-        for candidate_prompt_idx, candidate_prompt in enumerate(candidate_prompts):
-            reconstructed_prompt_candidate = torch.cat(
-                (candidate_prompt[idx], reconstructed_prompt), dim=1)
-            _, watermarked_prob, watermarked_empty_prob = generate_watermark(
-                prompts[idx], seeds[idx], reconstructed_prompt_candidate,
-                fixed_inputs=attacked_samples[idx])
-            candidate_probs.append(watermarked_empty_prob)
-            if candidate_prompt_idx == 0:
-                re_calculated_probs.append(watermarked_prob)
-            if candidate_prompt_idx == len(candidate_prompts) - 2:
-                re_calculated_empty_probs.append(watermarked_empty_prob)
-            elif candidate_prompt_idx == len(candidate_prompts) - 1:
-                re_calculated_icl_probs.append(watermarked_empty_prob)
-
-            pbar.update(1)
-
-        # Convert list to tensor before applying tensor operations
-        candidate_probs = torch.stack(candidate_probs)
-
-        # Now perform the log and sum operations on the tensor
-        best_candidate_idx = torch.argmax(
-            torch.sum(torch.log(candidate_probs), 2), 0
-        )
-
-        re_calculated_best_probs.append(
-            candidate_probs[best_candidate_idx, torch.arange(len(idx)), :]
-        )
-
-        reconstructed_prompt = torch.cat(
-            (candidate_prompts[best_candidate_idx, idx], reconstructed_prompt),
-            dim=1
-        )
-
-    re_constructed_prompts.append(reconstructed_prompt)
-
-pbar.close()
-re_calculated_probs = torch.vstack(re_calculated_probs)
-re_calculated_best_probs = torch.vstack(re_calculated_best_probs)
-re_calculated_empty_probs = torch.vstack(re_calculated_empty_probs)
-re_calculated_icl_probs = torch.vstack(re_calculated_icl_probs)
-re_constructed_prompts = torch.vstack(re_constructed_prompts)
+pbar = tqdm(total=T * 20 * 100)
 for itm in range(T):
-    re_calculated_probs_writer.writerow(
-        np.asarray(re_calculated_probs[itm].numpy()))
+    reconstructed_prompt = torch.zeros((1, 0), dtype=torch.long)
+    for _ in range(20):
+        broadcasted_prompt = torch.cat(
+            (reconstructed_prompt, prompts[[itm]]), dim=1)
+        broadcasted_prompt = torch.vstack(
+            [broadcasted_prompt for _ in range(vocab_size)])
+        broadcasted_prompt = torch.cat(
+            (torch.arange(vocab_size).unsqueeze(1), broadcasted_prompt), dim=1)
+
+        watermarked_empty_prob = []
+        vocab_size_split = torch.ceil(torch.tensor(vocab_size / 100)).long()
+        for batch in range(100):
+            idx = torch.arange(batch * vocab_size_split,
+                               min(vocab_size, (batch + 1) * vocab_size_split),
+                               dtype=torch.long)
+
+            watermarked_empty_prob_partial = get_probabilities(
+                broadcasted_prompt[idx], seeds[[itm]],
+                torch.vstack([attacked_samples[[itm]] for _ in range(len(idx))])
+                )
+            watermarked_empty_prob.append(watermarked_empty_prob_partial)
+            pbar.update(1)
+        watermarked_empty_prob = torch.vstack(watermarked_empty_prob)
+        best_vocab = torch.argmax(torch.sum(torch.log(watermarked_empty_prob), 1))
+        re_calculated_best_probs.append(watermarked_empty_prob[best_vocab])
+        reconstructed_prompt = torch.cat(
+            (torch.tensor([[best_vocab]]), reconstructed_prompt), dim=1)
+    re_constructed_prompts.append(reconstructed_prompt)
     re_calculated_best_probs_writer.writerow(
         np.asarray(re_calculated_best_probs[itm].numpy()))
-    re_calculated_empty_probs_writer.writerow(
-        np.asarray(re_calculated_empty_probs[itm].numpy()))
-    re_calculated_icl_probs_writer.writerow(
-        np.asarray(re_calculated_icl_probs[itm].numpy()))
+    re_calculated_best_probs_save.flush()
     re_constructed_prompts_writer.writerow(
         np.asarray(re_constructed_prompts[itm].numpy()))
-re_calculated_probs_save.close()
+    re_constructed_prompts_save.flush()
+pbar.close()
+re_calculated_best_probs = torch.vstack(re_calculated_best_probs)
+re_constructed_prompts = torch.vstack(re_constructed_prompts)
 re_calculated_best_probs_save.close()
-re_calculated_empty_probs_save.close()
-re_calculated_icl_probs_save.close()
 re_constructed_prompts_save.close()
 
 pickle.dump(results, open(args.save, "wb"))
+log_file.close()

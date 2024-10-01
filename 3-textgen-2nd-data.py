@@ -115,9 +115,9 @@ with open("example/outputs.json") as file:
     dataset = json.load(file)
 
 def corrupt(tokens):
-    tokens = deletion_attack(tokens, args.deletion)
-    tokens = insertion_attack(tokens, args.insertion, eff_vocab_size)
-    tokens = substitution_attack(tokens, args.substitution, eff_vocab_size)
+    tokens, _ = deletion_attack(tokens, args.deletion)
+    tokens, _ = insertion_attack(tokens, args.insertion, eff_vocab_size)
+    tokens, _ = substitution_attack(tokens, args.substitution, eff_vocab_size)
 
     return tokens
 

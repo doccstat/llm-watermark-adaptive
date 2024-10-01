@@ -14,7 +14,7 @@ watermark_key_token_pairs <- matrix(c(
   # 100, 100
 ), ncol = 2, byrow = TRUE)
 attack_pcts <- c(
-  "0.0", "0.05", "0.1", "0.2", "0.3"
+  "0.0", "0.1", "0.2", "0.3"
 )
 watermarked_or_null <- c("watermarked")
 
@@ -54,8 +54,7 @@ for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) {  # nolint
 prompt_count <- 100
 dfs <- list()
 filename <- sub("XXX", 0, paste0(pvalue_files_templates[1, ], collapse = ""))
-metric_count <- 41
-# metric_count <- ncol(read.csv(filename, header = FALSE))
+metric_count <- ncol(read.csv(filename, header = FALSE))
 
 clusters <- parallel::makeCluster(parallel::detectCores() - 1)
 doParallel::registerDoParallel(clusters)
@@ -149,7 +148,65 @@ df$ProbsErrorInfNorm <- as.numeric(df$ProbsErrorInfNorm)
 
 ################################################################################
 
-interested_metrics <- c(1, 13:15, 26:28, 39:metric_count)
+correct_identified <- matrix(NA, nrow(pvalue_files_templates), 7)
+for (template_index in seq_len(nrow(pvalue_files_templates))) {
+  best_prompt <- as.matrix(read.csv(
+    paste0(
+      paste0(
+        pvalue_files_templates[template_index, seq_len(12)], collapse = ""
+      ), ".p-best-prompt.csv"
+    ),
+    header = FALSE
+  ))
+  true_prompt <- as.matrix(read.csv(
+    paste0(
+      paste0(
+        pvalue_files_templates[template_index, seq_len(12)], collapse = ""
+      ), ".p-prompt.csv"
+    ),
+    header = FALSE
+  ))
+  correct_identified[template_index, ] <- c(
+    pvalue_files_templates[template_index, c(2, 4, 6, 8, 10, 12)],
+    sum(rowSums(best_prompt == true_prompt) >= 45)
+  )
+}
+correct_identified <- as.data.frame(correct_identified)
+names(correct_identified) <- c(
+  "LLM", "GenerationMethod", "Attack", "WatermarkKeyLength", "TokensCount",
+  "AttackPct", "CorrectIdentified"
+)
+correct_identified$LLM <- as.character(correct_identified$LLM)
+correct_identified$GenerationMethod <- as.character(correct_identified$GenerationMethod)
+correct_identified$Attack <- as.character(correct_identified$Attack)
+correct_identified$WatermarkKeyLength <- as.numeric(correct_identified$WatermarkKeyLength)
+correct_identified$TokensCount <- factor(correct_identified$TokensCount)
+correct_identified$AttackPct <- as.numeric(correct_identified$AttackPct)
+correct_identified$CorrectIdentified <- as.numeric(correct_identified$CorrectIdentified) / 100
+
+for (model_prefix in models_folders_prefix) {
+  p <- ggplot2::ggplot(
+    correct_identified[correct_identified$LLM == model_prefix, ],
+    ggplot2::aes(x = AttackPct, y = CorrectIdentified, color = TokensCount)
+  ) +
+    ggplot2::geom_line() +
+    ggplot2::facet_grid(
+      ~ Attack,
+      labeller = ggplot2::label_both
+    ) +
+    ggplot2::xlab("Attack percentage") +
+    ggplot2::ylab("Correctly identified") +
+    ggplot2::scale_y_continuous(limits = c(0, 1)) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(legend.position = "bottom")
+  ggplot2::ggsave(
+    paste0("results/", model_prefix, "-correct-identified.pdf"), p, width = 7, height = 3
+  )
+}
+
+################################################################################
+
+interested_metrics <- c(1, 2, 11, 24)
 
 theoretical_df <- data.frame(df[
   df$GenerationMethod == "gumbel" &
@@ -172,8 +229,303 @@ theoretical_df_power <- aggregate(
 )
 
 theoretical_df_power_i <- theoretical_df_power[
-  theoretical_df_power$Metric %in% c(2, interested_metrics),
+  theoretical_df_power$Metric %in% interested_metrics,
 ]
+
+color_palette <- seq_along(interested_metrics)
+names(color_palette) <- interested_metrics
+
+for (model_prefix in models_folders_prefix) {
+  theoretical_df_power_i_llm <- theoretical_df_power_i[
+    theoretical_df_power_i$LLM == model_prefix,
+  ]
+  theoretical_df_power_i_llm$Metric <- factor(
+    theoretical_df_power_i_llm$Metric,
+    levels = interested_metrics[color_palette]
+  )
+  p <- ggplot2::ggplot(
+    theoretical_df_power_i_llm,
+    ggplot2::aes(x = TokensCount, y = x, color = Metric)
+  ) +
+    ggplot2::geom_line() +
+    ggplot2::scale_color_hue(labels = color_palette) +
+    ggplot2::theme_minimal() +
+    ggplot2::xlab("Text length") +
+    ggplot2::ylab("Power") +
+    ggplot2::scale_x_continuous(
+      breaks = c(10, 20, 30),
+      labels = c(10, 20, 30)
+    )
+  ggplot2::ggsave(
+    paste0("results/", model_prefix, "-theoretical.pdf"), p, width = 4.2, height = 1.6
+  )
+}
+
+################################################################################
+################################################################################
+
+probs_true_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-probs.csv"
+probs_98_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-98-probs.csv"
+probs_96_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-96-probs.csv"
+probs_90_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-90-probs.csv"
+probs_80_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-80-probs.csv"
+probs_60_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-60-probs.csv"
+probs_40_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-40-probs.csv"
+probs_20_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-20-probs.csv"
+probs_empty_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-empty-probs.csv"
+
+probs_true <- as.matrix(read.csv(probs_true_filename, header = FALSE))[c(1, 3, 30), ]
+probs_98 <- as.matrix(read.csv(probs_98_filename, header = FALSE))[c(1, 3, 30), ]
+probs_96 <- as.matrix(read.csv(probs_96_filename, header = FALSE))[c(1, 3, 30), ]
+probs_90 <- as.matrix(read.csv(probs_90_filename, header = FALSE))[c(1, 3, 30), ]
+probs_80 <- as.matrix(read.csv(probs_80_filename, header = FALSE))[c(1, 3, 30), ]
+probs_60 <- as.matrix(read.csv(probs_60_filename, header = FALSE))[c(1, 3, 30), ]
+probs_40 <- as.matrix(read.csv(probs_40_filename, header = FALSE))[c(1, 3, 30), ]
+probs_20 <- as.matrix(read.csv(probs_20_filename, header = FALSE))[c(1, 3, 30), ]
+probs_empty <- as.matrix(read.csv(probs_empty_filename, header = FALSE))[c(1, 3, 30), ]
+
+df_probs <- data.frame(
+  rbind(
+    cbind(0, seq_len(nrow(probs_true)), probs_true),
+    cbind(1, seq_len(nrow(probs_98)), probs_98),
+    cbind(2, seq_len(nrow(probs_96)), probs_96),
+    cbind(5, seq_len(nrow(probs_90)), probs_90),
+    cbind(10, seq_len(nrow(probs_80)), probs_80),
+    cbind(20, seq_len(nrow(probs_60)), probs_60),
+    cbind(30, seq_len(nrow(probs_40)), probs_40),
+    cbind(40, seq_len(nrow(probs_20)), probs_20),
+    cbind(50, seq_len(nrow(probs_empty)), probs_empty)
+  )
+)
+names(df_probs) <- c("EditDistance", "PromptIndex", paste0("Probs", seq_len(ncol(probs_true))))
+interested_edit_distances <- c(0, 10, 30, 50)
+df_probs_molten <- reshape2::melt(
+  df_probs[df_probs$EditDistance %in% interested_edit_distances, ],
+  id.vars = c("EditDistance", "PromptIndex"),
+  variable.name = "TokenIndex",
+  value.name = "Probs"
+)
+df_probs_molten$EditDistance <- factor(
+  df_probs_molten$EditDistance,
+  levels = interested_edit_distances
+)
+df_probs_molten$TokenIndex <- as.numeric(df_probs_molten$TokenIndex)
+
+p <- ggplot2::ggplot(
+  df_probs_molten,
+  ggplot2::aes(
+    x = TokenIndex, y = Probs, color = EditDistance, group = EditDistance
+  )
+) +
+  ggplot2::geom_line() +
+  ggplot2::scale_y_continuous(limits = c(0, 1)) +
+  ggplot2::facet_wrap(~ PromptIndex, nrow = 1) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.position = "bottom", strip.text.x = ggplot2::element_blank()
+  ) +
+  ggplot2::xlab("Token index") +
+  ggplot2::ylab("Probability") +
+  ggplot2::scale_color_hue(
+    labels = c("0", "10", "30", "50"), name = "Edit distance"
+  ) +
+  ggplot2::scale_x_continuous(breaks = c(1, 10, 20)) +
+  ggplot2::guides(color = ggplot2::guide_legend(nrow = 1, byrow = TRUE))
+ggplot2::ggsave("results/probs-edit-distance.pdf", p, width = 10, height = 2.2)
+
+################################################################################
+################################################################################
+
+# The following piece code is no longer used.
+probs_true_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-probs.csv"
+probs_98_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-98-probs.csv"
+probs_96_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-96-probs.csv"
+probs_90_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-90-probs.csv"
+probs_80_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-80-probs.csv"
+probs_60_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-60-probs.csv"
+probs_40_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-40-probs.csv"
+probs_20_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-20-probs.csv"
+probs_empty_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-empty-probs.csv"
+
+probs_true <- as.matrix(read.csv(probs_true_filename, header = FALSE))[seq_len(100), ]
+probs_98 <- as.matrix(read.csv(probs_98_filename, header = FALSE))[seq_len(100), ]
+probs_96 <- as.matrix(read.csv(probs_96_filename, header = FALSE))[seq_len(100), ]
+probs_90 <- as.matrix(read.csv(probs_90_filename, header = FALSE))[seq_len(100), ]
+probs_80 <- as.matrix(read.csv(probs_80_filename, header = FALSE))[seq_len(100), ]
+probs_60 <- as.matrix(read.csv(probs_60_filename, header = FALSE))[seq_len(100), ]
+probs_40 <- as.matrix(read.csv(probs_40_filename, header = FALSE))[seq_len(100), ]
+probs_20 <- as.matrix(read.csv(probs_20_filename, header = FALSE))[seq_len(100), ]
+probs_empty <- as.matrix(read.csv(probs_empty_filename, header = FALSE))[seq_len(100), ]
+
+df_probs <- data.frame(
+  rbind(
+    cbind(0, seq_len(nrow(probs_true)), probs_true),
+    cbind(1, seq_len(nrow(probs_98)), probs_98),
+    cbind(2, seq_len(nrow(probs_96)), probs_96),
+    cbind(5, seq_len(nrow(probs_90)), probs_90),
+    cbind(10, seq_len(nrow(probs_80)), probs_80),
+    cbind(20, seq_len(nrow(probs_60)), probs_60),
+    cbind(30, seq_len(nrow(probs_40)), probs_40),
+    cbind(40, seq_len(nrow(probs_20)), probs_20),
+    cbind(50, seq_len(nrow(probs_empty)), probs_empty)
+  )
+)
+names(df_probs) <- c("EditDistance", "PromptIndex", paste0("Probs", seq_len(ncol(probs_true))))
+interested_edit_distances <- c(0, 1, 2, 5, 10, 20, 30, 40, 50)
+df_probs$EditDistance <- factor(df_probs$EditDistance, levels = interested_edit_distances)
+for (i in seq_len(nrow(df_probs))) {
+  df_probs[i, "DTW"] <- dtw::dtw(
+    df_probs[i, 2 + seq_len(10)], df_probs[(i - 1) %% 100 + 1, 2 + seq_len(10)]
+  )$distance
+}
+
+ggplot2::ggplot(
+  df_probs,
+  ggplot2::aes(x = EditDistance, y = DTW, color = EditDistance)
+) +
+  ggplot2::geom_boxplot() +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = "bottom")
+
+################################################################################
+################################################################################
+
+# The following piece code is no longer used.
+probs_true_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-probs.csv"
+probs_98_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-98-probs.csv"
+probs_96_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-96-probs.csv"
+probs_90_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-90-probs.csv"
+probs_80_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-80-probs.csv"
+probs_60_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-60-probs.csv"
+probs_40_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-40-probs.csv"
+probs_20_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-20-probs.csv"
+probs_empty_filename <- "results/ml3-gumbel-deletion-10-10-0.0.p-re-calculated-empty-probs.csv"
+
+probs_true <- as.matrix(read.csv(probs_true_filename, header = FALSE))[seq_len(100), ]
+probs_98 <- as.matrix(read.csv(probs_98_filename, header = FALSE))[seq_len(100), ]
+probs_96 <- as.matrix(read.csv(probs_96_filename, header = FALSE))[seq_len(100), ]
+probs_90 <- as.matrix(read.csv(probs_90_filename, header = FALSE))[seq_len(100), ]
+probs_80 <- as.matrix(read.csv(probs_80_filename, header = FALSE))[seq_len(100), ]
+probs_60 <- as.matrix(read.csv(probs_60_filename, header = FALSE))[seq_len(100), ]
+probs_40 <- as.matrix(read.csv(probs_40_filename, header = FALSE))[seq_len(100), ]
+probs_20 <- as.matrix(read.csv(probs_20_filename, header = FALSE))[seq_len(100), ]
+probs_empty <- as.matrix(read.csv(probs_empty_filename, header = FALSE))[seq_len(100), ]
+
+df_probs <- data.frame(
+  rbind(
+    cbind(0, seq_len(nrow(probs_true)), probs_true),
+    cbind(1, seq_len(nrow(probs_98)), probs_98),
+    cbind(2, seq_len(nrow(probs_96)), probs_96),
+    cbind(5, seq_len(nrow(probs_90)), probs_90),
+    cbind(10, seq_len(nrow(probs_80)), probs_80),
+    cbind(20, seq_len(nrow(probs_60)), probs_60),
+    cbind(30, seq_len(nrow(probs_40)), probs_40),
+    cbind(40, seq_len(nrow(probs_20)), probs_20),
+    cbind(50, seq_len(nrow(probs_empty)), probs_empty)
+  )
+)
+names(df_probs) <- c("EditDistance", "PromptIndex", paste0("Probs", seq_len(ncol(probs_true))))
+interested_edit_distances <- c(0, 1, 2, 5, 10, 20, 30, 40, 50)
+df_probs$EditDistance <- factor(df_probs$EditDistance, levels = interested_edit_distances)
+df_probs$criteria <- apply(df_probs[, 2 + seq_len(10)], 1, function(x) sum(log(x)))
+
+ggplot2::ggplot(
+  df_probs[df_probs$EditDistance %in% interested_edit_distances, ],
+  ggplot2::aes(x = EditDistance, y = criteria, color = EditDistance)
+) +
+  ggplot2::geom_boxplot() +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = "bottom")
+
+probs_true_index <- apply(probs_true, 1, function(x) which.min(x))
+df_probs$TrueMinIndex <- rep(probs_true_index, length(interested_edit_distances))
+df_probs$MinIndex <- apply(df_probs[, 2 + seq_len(10)], 1, function(x) which.min(x))
+df_probs$CorrectMinIndex <- df_probs$TrueMinIndex == df_probs$MinIndex
+df_probs_molten <- reshape2::melt(
+  df_probs[df_probs$EditDistance %in% interested_edit_distances, c(
+    "EditDistance", "CorrectMinIndex"
+  )],
+  id.vars = c("EditDistance"),
+  value.name = "CorrectMinIndex"
+)
+df_probs_molten$EditDistance <- factor(
+  df_probs_molten$EditDistance,
+  levels = interested_edit_distances
+)
+aggregate(df_probs_molten$CorrectMinIndex, by = list(df_probs_molten$EditDistance), FUN = sum)
+
+################################################################################
+################################################################################
+
+# The following piece code is no longer used.
+probs_true_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-probs.csv"
+probs_98_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-98-probs.csv"
+probs_96_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-96-probs.csv"
+probs_90_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-90-probs.csv"
+probs_80_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-80-probs.csv"
+probs_60_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-60-probs.csv"
+probs_40_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-40-probs.csv"
+probs_20_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-20-probs.csv"
+probs_empty_filename <- "results/ml3-gumbel-deletion-20-20-0.0.p-re-calculated-empty-probs.csv"
+
+probs_true <- as.matrix(read.csv(probs_true_filename, header = FALSE))[seq_len(100), ]
+probs_98 <- as.matrix(read.csv(probs_98_filename, header = FALSE))[seq_len(100), ]
+probs_96 <- as.matrix(read.csv(probs_96_filename, header = FALSE))[seq_len(100), ]
+probs_90 <- as.matrix(read.csv(probs_90_filename, header = FALSE))[seq_len(100), ]
+probs_80 <- as.matrix(read.csv(probs_80_filename, header = FALSE))[seq_len(100), ]
+probs_60 <- as.matrix(read.csv(probs_60_filename, header = FALSE))[seq_len(100), ]
+probs_40 <- as.matrix(read.csv(probs_40_filename, header = FALSE))[seq_len(100), ]
+probs_20 <- as.matrix(read.csv(probs_20_filename, header = FALSE))[seq_len(100), ]
+probs_empty <- as.matrix(read.csv(probs_empty_filename, header = FALSE))[seq_len(100), ]
+
+probs_diff <- data.frame(
+  rbind(
+    cbind(1, seq_len(nrow(probs_98)), probs_true - probs_98),
+    cbind(2, seq_len(nrow(probs_96)), probs_true - probs_96),
+    cbind(5, seq_len(nrow(probs_90)), probs_true - probs_90),
+    cbind(10, seq_len(nrow(probs_80)), probs_true - probs_80),
+    cbind(20, seq_len(nrow(probs_60)), probs_true - probs_60),
+    cbind(30, seq_len(nrow(probs_40)), probs_true - probs_40),
+    cbind(40, seq_len(nrow(probs_20)), probs_true - probs_20),
+    cbind(50, seq_len(nrow(probs_empty)), probs_true - probs_empty)
+  )
+)
+names(probs_diff) <- c(
+  "EditDistance", "PromptIndex", paste0("Probs", seq_len(ncol(probs_true)))
+)
+interested_edit_distances <- c(1, 2, 5, 10, 20, 30, 40, 50)
+probs_diff$L1 <- apply(probs_diff[, 2 + seq_len(20)], 1, function(x) sum(abs(x)))
+probs_diff$L2 <- apply(probs_diff[, 2 + seq_len(20)], 1, function(x) sqrt(sum(x^2)))
+probs_diff$infty <- apply(probs_diff[, 2 + seq_len(20)], 1, function(x) max(abs(x)))
+probs_true_index <- apply(probs_true, 1, function(x) which.min(x))
+probs_diff$MinProbError <- abs(probs_diff[, 2 + seq_len(20)][cbind(seq_len(nrow(probs_diff)), rep(probs_true_index, length(interested_edit_distances)))])
+probs_diff_molten <- reshape2::melt(
+  probs_diff[probs_diff$EditDistance %in% interested_edit_distances, c(
+    "EditDistance", "L1", "L2", "infty", "MinProbError"
+  )],
+  id.vars = c("EditDistance"),
+  value.name = "value"
+)
+probs_diff_molten$EditDistance <- factor(
+  probs_diff_molten$EditDistance,
+  levels = interested_edit_distances
+)
+
+p <- ggplot2::ggplot(
+  probs_diff_molten,
+  ggplot2::aes(x = EditDistance, y = value, fill = EditDistance)
+) +
+  ggplot2::geom_boxplot() +
+  ggplot2::scale_y_continuous(trans = "log10") +
+  ggplot2::facet_wrap(~ variable, scales = "free") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = "bottom")
+ggplot2::ggsave("results/probs-diff.pdf", p, width = 5, height = 3)
+
+################################################################################
+################################################################################
+
+# The following piece code is no longer used.
 theoretical_df_power_i$label_x <- prompt_count + 3
 for (llm in unique(theoretical_df_power_i$LLM)) {  # nolint
   for (wkl in unique(theoretical_df_power_i$WatermarkKeyLength)) {
@@ -204,7 +556,7 @@ for (llm in unique(theoretical_df_power_i$LLM)) {  # nolint
   }
 }
 theoretical_df_power_ni <- theoretical_df_power[
-  !(theoretical_df_power$Metric %in% c(2, interested_metrics)),
+  !(theoretical_df_power$Metric %in% interested_metrics),
 ]
 
 p <- ggplot2::ggplot(
@@ -222,17 +574,17 @@ p <- ggplot2::ggplot(
       color = Metric
     )
   ) +
-  # ggplot2::geom_segment(
-  #   data = theoretical_df_power_ni,
-  #   ggplot2::aes(
-  #     x = 0,
-  #     xend = prompt_count,
-  #     y = x,
-  #     yend = x,
-  #     color = Metric
-  #   ),
-  #   alpha = 0.2
-  # ) +
+  ggplot2::geom_segment(
+    data = theoretical_df_power_ni,
+    ggplot2::aes(
+      x = 0,
+      xend = prompt_count,
+      y = x,
+      yend = x,
+      color = Metric
+    ),
+    alpha = 0.2
+  ) +
   ggplot2::geom_text(
     data = theoretical_df_power_i,
     ggplot2::aes(label = Metric, x = label_x, y = x),
@@ -258,6 +610,7 @@ p <- ggplot2::ggplot(
 ggplot2::ggsave("results/theoretical.pdf", p, width = 7, height = 5)
 
 ################################################################################
+################################################################################
 
 powers <- rbind(
   cbind(
@@ -273,7 +626,7 @@ powers <- rbind(
         AttackPct = df$AttackPct,
         Metric = df$Metric
       ),
-      FUN = function(x) mean(x, na.rm = TRUE)
+      FUN = function(x) c(Mean = mean(x, na.rm = TRUE), StdDev = sd(x, na.rm = TRUE))
     )
   ),
   cbind(
@@ -289,11 +642,11 @@ powers <- rbind(
         AttackPct = df$AttackPct,
         Metric = df$Metric
       ),
-      FUN = function(x) mean(x, na.rm = TRUE)
+      FUN = function(x) c(Mean = mean(x, na.rm = TRUE), StdDev = sd(x, na.rm = TRUE))
     )
   )
 )
-powers <- data.frame(powers)
+powers <- do.call(data.frame, powers)
 powers$Metric <- factor(powers$Metric, levels = seq_len(metric_count))
 powers <- powers[order(
   powers$WatermarkKeyLength,
@@ -304,84 +657,125 @@ powers <- powers[order(
   powers$Metric
 ), ]
 
-powers$LineType <- rep("dashed", nrow(powers))
-powers$LineType[powers$Metric == 2] <- "theoretical"
-powers$LineType[powers$Metric %in% (2 + seq_len(13))] <- "empty"
-powers$LineType[powers$Metric %in% (15 + seq_len(13))] <- "best"
-powers$LineType[powers$Metric %in% (28 + seq_len(13))] <- "icl"
+for (model_prefix in models_folders_prefix) {
+  for (threshold in c(0.05)) {
+    for (attack in attacks) {
+      print(paste(model_prefix, threshold, attack, "power"))
+      tab <- NULL
+      for (tct in watermark_key_token_pairs[, 2]) {
+        tab <- cbind(
+          tab,
+          matrix(
+            powers[powers$LLM == model_prefix &
+              powers$Threshold == threshold &
+              powers$Attack == attack &
+              powers$TokensCount == tct &
+              powers$Metric %in% interested_metrics, "x.Mean"],
+            ncol = length(attack_pcts),
+            byrow = TRUE
+          )
+        )
+      }
+      rownames(tab) <- paste("Metric", color_palette)
+      tab <- cbind(tab, rowSums(tab[, -c(1, 5, 9)]))
+      print(xtable::xtable(tab, type = "latex", digits = 2))
 
-powers$line_alpha <- 0.2
-powers$line_alpha[powers$Metric %in% interested_metrics] <- 1
+      # print(paste(model_prefix, threshold, attack, "stddev"))
+      # tab <- NULL
+      # for (tct in watermark_key_token_pairs[, 2]) {
+      #   tab <- cbind(
+      #     tab,
+      #     matrix(
+      #       powers[powers$LLM == model_prefix &
+      #         powers$Threshold == threshold &
+      #         powers$Attack == attack &
+      #         powers$TokensCount == tct &
+      #         powers$Metric %in% interested_metrics, "x.StdDev"],
+      #       ncol = length(attack_pcts),
+      #       byrow = TRUE
+      #     )
+      #   )
+      # }
+      # rownames(tab) <- paste("Metric", color_palette)
+      # print(xtable::xtable(tab, type = "latex", digits = 2))
+    }
+  }
+}
 
-matrix(powers[
-  powers$Attack == "substitution" &
-    powers$GenerationMethod == "gumbel" &
-    powers$Threshold == 0.05 &
-    powers$LLM == "ml3" &
-    powers$WatermarkKeyLength == 100 &
-    powers$TokensCount == 100,
-  "x"
-], nrow = metric_count, byrow = TRUE)
+# powers$LineType <- rep("dashed", nrow(powers))
+# powers$LineType[powers$Metric == 2] <- "theoretical"
+# powers$LineType[powers$Metric %in% (2 + seq_len(13))] <- "empty"
+# powers$LineType[powers$Metric %in% (15 + seq_len(13))] <- "best"
+# powers$LineType[powers$Metric %in% (28 + seq_len(13))] <- "icl"
 
-color_palette <- c(
-  "black", grDevices::hcl(
-    h = seq(15, 375, length = length(interested_metrics) + 1), l = 65, c = 100
-  )[seq_along(interested_metrics)]
-)
-names(color_palette) <- c("black", as.character(interested_metrics))
+# powers$line_alpha <- 0.2
+# powers$line_alpha[powers$Metric %in% interested_metrics] <- 1
+
+# matrix(powers[
+#   powers$Attack == "substitution" &
+#     powers$GenerationMethod == "gumbel" &
+#     powers$Threshold == 0.05 &
+#     powers$LLM == "ml3" &
+#     powers$WatermarkKeyLength == 100 &
+#     powers$TokensCount == 100,
+#   "x"
+# ], nrow = metric_count, byrow = TRUE)
+
+# color_palette <- c(
+#   "black", grDevices::hcl(
+#     h = seq(15, 375, length = length(interested_metrics) + 1), l = 65, c = 100
+#   )[seq_along(interested_metrics)]
+# )
+# names(color_palette) <- c("black", as.character(interested_metrics))
 
 for (threshold in c(0.05, 0.01)) {
-  p <- ggplot2::ggplot() +
-    ggplot2::geom_line(
-      ggplot2::aes(
-        x = AttackPct,
-        y = x,
-        color = Metric,
-        linetype = LineType,
-        alpha = line_alpha
-      ),
-      data = powers[
-        powers$Threshold == threshold & powers$Metric %in% interested_metrics,
-      ]
-    ) +
-    ggplot2::facet_grid(
-      WatermarkKeyLength ~ LLM + GenerationMethod + Attack, scales = "free_y"
-    ) +
-    ggplot2::theme_minimal() +
-    ggplot2::scale_x_continuous(labels = scales::percent) +
-    ggplot2::scale_linetype_manual(
-      values = c(
-        "dashed" = "dashed",
-        "theoretical" = "solid",
-        "empty" = "solid",
-        "best" = "solid",
-        "icl" = "solid"
+  for (model_prefix in models_folders_prefix) {
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_line(
+        ggplot2::aes(
+          x = AttackPct,
+          y = x.Mean,
+          color = Metric
+        ),
+        data = powers[
+          powers$Threshold == threshold &
+            powers$LLM == model_prefix &
+            powers$Metric %in% interested_metrics,
+        ]
+      ) +
+      ggplot2::facet_grid(
+        Attack ~ TokensCount, scales = "free_y"
+      ) +
+      ggplot2::theme_minimal() +
+      ggplot2::scale_x_continuous(labels = scales::percent) +
+      ggplot2::scale_color_hue(labels = color_palette) +
+      ggplot2::theme(legend.position = "bottom") +
+      ggplot2::xlab("Attack percentage") +
+      ggplot2::ylab("Power") +
+      ggplot2::guides(
+        linetype = "none",
+        alpha = "none",
+        color = ggplot2::guide_legend(nrow = 1, byrow = TRUE)
       )
-    ) +
-    ggplot2::scale_color_manual(
-      values = color_palette
-    ) +
-    ggplot2::theme(legend.position = "bottom") +
-    ggplot2::guides(
-      linetype = "none",
-      alpha = "none",
-      color = ggplot2::guide_legend(nrow = 1, byrow = TRUE)
+    ggplot2::ggsave(
+      paste0(
+        "results/",
+        model_prefix,
+        "-powers-",
+        threshold,
+        ".pdf"
+      ),
+      p,
+      width = 10,
+      height = 5
     )
-  ggplot2::ggsave(
-    paste0(
-      "results/powers-",
-      threshold,
-      ".pdf"
-    ),
-    p,
-    width = 12,
-    height = 7
-  )
+  }
 }
 
 ################################################################################
 ################################################################################
 
+# The following piece code is no longer used.
 watermark_key_length <- 10
 tokens_count <- 10
 llm <- "ml3"
@@ -392,7 +786,7 @@ probs_matrix <- read.csv(
   paste0(
     folder,
     llm,
-    "-gumbel-substitution-",
+    "-gumbel-deletion-",
     watermark_key_length,
     "-",
     tokens_count,
@@ -411,7 +805,7 @@ probs_matrix <- read.csv(
   paste0(
     folder,
     llm,
-    "-gumbel-substitution-",
+    "-gumbel-deletion-",
     watermark_key_length,
     "-",
     tokens_count,
@@ -430,7 +824,7 @@ probs_matrix <- read.csv(
   paste0(
     folder,
     llm,
-    "-gumbel-substitution-",
+    "-gumbel-deletion-",
     watermark_key_length,
     "-",
     tokens_count,
@@ -449,7 +843,7 @@ probs_matrix <- read.csv(
   paste0(
     folder,
     llm,
-    "-gumbel-substitution-",
+    "-gumbel-deletion-",
     watermark_key_length,
     "-",
     tokens_count,
@@ -567,6 +961,16 @@ difference_df[["exp8"]] <- cbind(
 names(difference_df[["exp8"]]) <-
   c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
 
+exp9 <- df_probs_list[["empty"]][, -c(1, 2)]
+exp9 <- pbeta(as.matrix(exp9), 0.5, 1)
+difference_df[["exp9"]] <- cbind(
+  "exp9",
+  seq_len(nrow(df_probs_list[["empty"]])),
+  df_probs_list[["true"]][, -c(1, 2)] - exp9
+)
+names(difference_df[["exp9"]]) <-
+  c("ProbsName", "PromptIndex", paste0("Probs", seq_len(tokens_count)))
+
 difference_df <- do.call(rbind, difference_df)
 difference_df <- data.frame(difference_df)
 names(difference_df) <-
@@ -616,11 +1020,12 @@ df_probs_molten <- reshape2::melt(
 df_probs_molten$TokenIndex <- as.numeric(df_probs_molten$TokenIndex)
 
 p <- ggplot2::ggplot(
-  df_probs_molten,
+  df_probs_molten[df_probs_molten$ProbsName %in% c("true", "empty"), ],
   ggplot2::aes(x = TokenIndex, y = Probs, color = ProbsName, group = ProbsName)
 ) +
   ggplot2::geom_line() +
-  ggplot2::facet_wrap(~PromptIndex, scales = "free_y") +
+  ggplot2::scale_y_continuous(limits = c(0, 0.1)) +
+  ggplot2::facet_wrap(~PromptIndex) +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = "bottom") +
   ggplot2::scale_x_continuous(breaks = seq_len(tokens_count))
@@ -637,7 +1042,9 @@ p <- ggplot2::ggplot(
 ggplot2::ggsave("results/probs-criteria-boxplot.pdf", p, width = 8, height = 4)
 
 ################################################################################
+################################################################################
 
+# The following piece code is no longer used.
 df_probs <- NULL
 for (model_prefix in models_folders_prefix) {
   df_llm <- df[df$LLM == model_prefix, ]
@@ -758,3 +1165,43 @@ ggplot2::ggsave(
   width = 7,
   height = 7
 )
+
+################################################################################
+################################################################################
+
+probs_matrix_filename <- "results/ml3-gumbel-substitution-10-10-0.1.p-re-calculated-probs.csv"
+attacked_indices_filename <- "results/ml3-gumbel-substitution-10-10-0.1.p-attacked-idx.csv"
+
+probs_matrix <- as.matrix(read.csv(probs_matrix_filename, header = FALSE))
+attacked_indices <- as.matrix(read.csv(attacked_indices_filename, header = FALSE))
+
+attacked_probs <- probs_matrix[cbind(seq_len(nrow(probs_matrix)), attacked_indices[, 1] + 1)]
+rest_probs <- probs_matrix[-(attacked_indices[, 1] * nrow(probs_matrix) + seq_len(nrow(probs_matrix)))]
+
+p <- ggplot2::ggplot(
+    data = data.frame(
+        Probs = c(attacked_probs, rest_probs),
+        Group = c(rep("Attacked", length(attacked_probs)), rep("Unattacked", length(rest_probs)))
+    ),
+    ggplot2::aes(x = Group, y = Probs, fill = Group)
+) +
+    ggplot2::geom_boxplot(width = 0.1, outlier.shape = NA) +
+    gghalves::geom_half_point(ggplot2::aes(color = Group), side = "l", range_scale = 0.4, alpha = 0.4, size = 0.5) +
+    see::geom_violinhalf(scale = "width", width = 0.8, position = ggplot2::position_nudge(0.1, 0)) +
+  ggplot2::coord_flip() +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = "none") +
+  ggplot2::scale_y_continuous(
+    limits = c(0, 1),
+    transform = scales::new_transform(
+      name = "fifth_root",
+      transform = function(y) y^(1/5),
+      inverse = function(y) y^5,
+      domain = c(0, Inf)
+    ),
+    breaks = c(1e-9, 0.1, 0.2, 0.6, 1),
+    labels = c(1e-9, 0.1, 0.2, 0.6, 1)
+  ) +
+  ggplot2::xlab("") +
+  ggplot2::ylab("Probability")
+ggplot2::ggsave("results/probs-attacked-vs-rest.pdf", p, width = 7.5, height = 2.5)
