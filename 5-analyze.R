@@ -21,7 +21,7 @@ attack_pcts <- list(
 watermarked_or_null <- c("watermarked")
 
 pvalue_files_templates <- matrix(NA, 0, 17)
-for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) {  # nolint
+for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) { # nolint
   watermark_key_length <- watermark_key_token_pairs[wkt_index, 1]
   tokens_count <- watermark_key_token_pairs[wkt_index, 2]
   for (k_tokens_count_ratio in k_tokens_count_ratio_list) {
@@ -85,7 +85,8 @@ for (template_index in seq_len(nrow(pvalue_files_templates))) {
   )
   attacked_indices_filename <- paste0(
     paste0(
-      pvalue_files_templates[template_index, seq_len(12)], collapse = ""
+      pvalue_files_templates[template_index, seq_len(12)],
+      collapse = ""
     ), "-attacked-idx.csv"
   )
   attacked_indices_file <- file(attacked_indices_filename, "r")
@@ -121,7 +122,7 @@ names(df) <- c(
   "LLM", "Attack", "TokensCount",
   "AttackPct", "B", "PromptIndex", "Metric", "Criteria", "PValue"
 )
-df <- as.data.frame(lapply(df, unlist))  # nolint
+df <- as.data.frame(lapply(df, unlist)) # nolint
 # df$LLM <- as.character(df$LLM)
 # df$AttackPct <- as.numeric(df$AttackPct)
 # df$B <- as.numeric(df$B)
@@ -139,7 +140,8 @@ for (template_index in seq_len(nrow(pvalue_files_templates))) {
   best_prompt <- as.matrix(read.csv(
     paste0(
       paste0(
-        pvalue_files_templates[template_index, seq_len(12)], collapse = ""
+        pvalue_files_templates[template_index, seq_len(12)],
+        collapse = ""
       ), "-best-prompt.csv"
     ),
     header = FALSE
@@ -147,7 +149,8 @@ for (template_index in seq_len(nrow(pvalue_files_templates))) {
   true_prompt <- as.matrix(read.csv(
     paste0(
       paste0(
-        pvalue_files_templates[template_index, seq_len(12)], collapse = ""
+        pvalue_files_templates[template_index, seq_len(12)],
+        collapse = ""
       ), "-prompt.csv"
     ),
     header = FALSE
@@ -177,7 +180,7 @@ for (model_prefix in models_folders_prefix) {
   ) +
     ggplot2::geom_line() +
     ggplot2::facet_grid(
-      ~ Attack,
+      ~Attack,
       labeller = ggplot2::label_both
     ) +
     ggplot2::xlab("Attack percentage") +
@@ -186,7 +189,8 @@ for (model_prefix in models_folders_prefix) {
     ggplot2::theme_minimal() +
     ggplot2::theme(legend.position = "bottom")
   ggplot2::ggsave(
-    paste0("results/", model_prefix, "-correct-identified.pdf"), p, width = 7, height = 3
+    paste0("results/", model_prefix, "-correct-identified.pdf"), p,
+    width = 7, height = 3
   )
 }
 
@@ -324,7 +328,7 @@ p <- ggplot2::ggplot(
 ) +
   ggplot2::geom_line() +
   ggplot2::scale_y_continuous(limits = c(0, 1)) +
-  ggplot2::facet_wrap(~ PromptIndex, nrow = 1) +
+  ggplot2::facet_wrap(~PromptIndex, nrow = 1) +
   ggplot2::theme_minimal() +
   ggplot2::theme(
     legend.position = "bottom", strip.text.x = ggplot2::element_blank()
@@ -522,7 +526,7 @@ p <- ggplot2::ggplot(
 ) +
   ggplot2::geom_boxplot() +
   ggplot2::scale_y_continuous(trans = "log10") +
-  ggplot2::facet_wrap(~ variable, scales = "free") +
+  ggplot2::facet_wrap(~variable, scales = "free") +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = "bottom")
 ggplot2::ggsave("results/probs-diff.pdf", p, width = 5, height = 3)
@@ -532,7 +536,7 @@ ggplot2::ggsave("results/probs-diff.pdf", p, width = 5, height = 3)
 
 # The following piece code is no longer used.
 theoretical_df_power_i$label_x <- prompt_count + 3
-for (llm in unique(theoretical_df_power_i$LLM)) {  # nolint
+for (llm in unique(theoretical_df_power_i$LLM)) { # nolint
   for (wkl in unique(theoretical_df_power_i$WatermarkKeyLength)) {
     facet_df <- theoretical_df_power_i[
       theoretical_df_power_i$LLM == llm &
@@ -626,7 +630,7 @@ threshold <- 0.05
 
 for (model_prefix in models_folders_prefix) {
   for (attack in c("substitution")) {
-    df_attack <- df[df$Attack == attack &df$Metric %in% interested_metrics, ]
+    df_attack <- df[df$Attack == attack & df$Metric %in% interested_metrics, ]
     powers <- cbind(
       Threshold = threshold,
       aggregate(
@@ -676,7 +680,7 @@ for (model_prefix in models_folders_prefix) {
 
 for (model_prefix in models_folders_prefix) {
   for (attack in c("deletion", "insertion")) {
-    df_attack <- df[df$Attack == attack &df$Metric %in% interested_metrics, ]
+    df_attack <- df[df$Attack == attack & df$Metric %in% interested_metrics, ]
     powers <- cbind(
       Threshold = threshold,
       aggregate(
@@ -707,25 +711,25 @@ for (model_prefix in models_folders_prefix) {
       ],
       ggplot2::aes(x = TokensCount, y = x.Mean, color = Metric)
     ) +
-    ggplot2::geom_line() +
-    ggplot2::geom_errorbar(
-      ggplot2::aes(ymin = x.Mean - x.StdError, ymax = x.Mean + x.StdError),
-      width = 0.5
-    ) +
-    ggplot2::scale_color_hue(labels = color_palette) +
-    ggplot2::facet_grid(
-      ~ k_tokens_count_ratio,
-      labeller = ggplot2::labeller(
-        k_tokens_count_ratio = c("0.3" = "B/m: 0.3", "0.6" = "B/m: 0.6", "1" = "B/m: 1.0")
+      ggplot2::geom_line() +
+      ggplot2::geom_errorbar(
+        ggplot2::aes(ymin = x.Mean - x.StdError, ymax = x.Mean + x.StdError),
+        width = 0.5
+      ) +
+      ggplot2::scale_color_hue(labels = color_palette) +
+      ggplot2::facet_grid(
+        ~k_tokens_count_ratio,
+        labeller = ggplot2::labeller(
+          k_tokens_count_ratio = c("0.3" = "B/m: 0.3", "0.6" = "B/m: 0.6", "1" = "B/m: 1.0")
+        )
+      ) +
+      ggplot2::theme_minimal() +
+      ggplot2::xlab("Text length") +
+      ggplot2::ylab("Power") +
+      ggplot2::scale_x_continuous(
+        breaks = interested_tokens,
+        labels = interested_tokens
       )
-    ) +
-    ggplot2::theme_minimal() +
-    ggplot2::xlab("Text length") +
-    ggplot2::ylab("Power") +
-    ggplot2::scale_x_continuous(
-      breaks = interested_tokens,
-      labels = interested_tokens
-    )
     ggplot2::ggsave(
       paste0("results/", model_prefix, "-", attack, ".pdf"),
       p,
@@ -800,7 +804,7 @@ attack_pcts <- list(
 watermarked_or_null <- c("watermarked")
 
 pvalue_files_templates <- matrix(NA, 0, 17)
-for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) {  # nolint
+for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) { # nolint
   watermark_key_length <- watermark_key_token_pairs[wkt_index, 1]
   tokens_count <- watermark_key_token_pairs[wkt_index, 2]
   max_k <- tokens_count * 1.0
@@ -887,7 +891,7 @@ names(df) <- c(
   "LLM", "GenerationMethod", "Attack", "WatermarkKeyLength", "TokensCount",
   "AttackPct", "PromptIndex", "Metric", "PValue"
 )
-df <- as.data.frame(lapply(df, unlist))  # nolint
+df <- as.data.frame(lapply(df, unlist)) # nolint
 df$LLM <- as.character(df$LLM)
 df$AttackPct <- as.numeric(df$AttackPct)
 df$WatermarkKeyLength <- as.numeric(df$WatermarkKeyLength)
@@ -900,7 +904,7 @@ interested_metrics <- c(1, 2, 11, 24)
 threshold <- 0.05
 
 theoretical_df <- data.frame(df[
-    df$Attack == "substitution" &
+  df$Attack == "substitution" &
     df$AttackPct == 0,
   c(
     "LLM", "GenerationMethod", "WatermarkKeyLength", "TokensCount",

@@ -64,7 +64,8 @@ def generate(
     # and empty_probs column by column. So in the end it should be a matrix of
     # batch_size x vocab_size x m
     probs_save = torch.zeros((batch_size, vocab_size, 0))
-    empty_probs_save = torch.zeros((batch_size, vocab_size, 0)).to(model.device)
+    empty_probs_save = torch.zeros(
+        (batch_size, vocab_size, 0)).to(model.device)
 
     for i in range(m):
         with torch.no_grad():
@@ -85,7 +86,8 @@ def generate(
             empty_output.logits[:, -1], dim=-1)
 
         probs_save = torch.cat([probs_save, probs.unsqueeze(-1)], dim=-1)
-        empty_probs_save = torch.cat([empty_probs_save, empty_probs.unsqueeze(-1)], dim=-1)
+        empty_probs_save = torch.cat(
+            [empty_probs_save, empty_probs.unsqueeze(-1)], dim=-1)
 
         if fixed_inputs is None:
             tokens, sampling_prob = sampler(probs, pis, xis[torch.arange(
@@ -118,6 +120,7 @@ def generate(
         probs_save,
         empty_probs_save
     )
+
 
 def generate_mixed(
         model, prompts, vocab_size, n, m, seeds, key_func, sampler,
@@ -179,7 +182,8 @@ def generate_mixed(
     empty_past = None
 
     probs_save = torch.zeros((batch_size, vocab_size, 0))
-    empty_probs_save = torch.zeros((batch_size, vocab_size, 0)).to(model.device)
+    empty_probs_save = torch.zeros(
+        (batch_size, vocab_size, 0)).to(model.device)
 
     for i in range(m):
         with torch.no_grad():
@@ -200,7 +204,8 @@ def generate_mixed(
             empty_output.logits[:, -1], dim=-1)
 
         probs_save = torch.cat([probs_save, probs.unsqueeze(-1)], dim=-1)
-        empty_probs_save = torch.cat([empty_probs_save, empty_probs.unsqueeze(-1)], dim=-1)
+        empty_probs_save = torch.cat(
+            [empty_probs_save, empty_probs.unsqueeze(-1)], dim=-1)
 
         if fixed_inputs is not None:
             tokens = fixed_inputs[:, i].unsqueeze(1)
@@ -212,24 +217,33 @@ def generate_mixed(
             # i may in some rows of no_watermark_locations but not in others
             # so deal with the two situations separately and then combine
             # the results
-            rows_no_watermark = torch.any(torch.isin(no_watermark_locations, i), 1).nonzero(as_tuple=True)[0]
+            rows_no_watermark = torch.any(torch.isin(
+                no_watermark_locations, i), 1).nonzero(as_tuple=True)[0]
             if rows_no_watermark.numel() > 0:
-                tokens_no_watermark = torch.multinomial(probs[rows_no_watermark], 1)
-                sampling_prob_no_watermark = torch.gather(probs[rows_no_watermark], 1, tokens_no_watermark)
+                tokens_no_watermark = torch.multinomial(
+                    probs[rows_no_watermark], 1)
+                sampling_prob_no_watermark = torch.gather(
+                    probs[rows_no_watermark], 1, tokens_no_watermark)
             else:
-                tokens_no_watermark = torch.tensor([], dtype=torch.int64, device=probs.device).view(0, 1)
-                sampling_prob_no_watermark = torch.tensor([], dtype=probs.dtype, device=probs.device).view(0, 1)
+                tokens_no_watermark = torch.tensor(
+                    [], dtype=torch.int64, device=probs.device).view(0, 1)
+                sampling_prob_no_watermark = torch.tensor(
+                    [], dtype=probs.dtype, device=probs.device).view(0, 1)
 
-            rows_watermark = torch.all(~torch.isin(no_watermark_locations, i), 1).nonzero(as_tuple=True)[0]
+            rows_watermark = torch.all(~torch.isin(
+                no_watermark_locations, i), 1).nonzero(as_tuple=True)[0]
             if rows_watermark.numel() > 0:
                 tokens_watermark, sampling_prob_watermark = sampler(
                     probs[rows_watermark],
                     pis[rows_watermark],
-                    xis[rows_watermark, (offset[rows_watermark].squeeze()+i) % n]
+                    xis[rows_watermark,
+                        (offset[rows_watermark].squeeze()+i) % n]
                 )
             else:
-                tokens_watermark = torch.tensor([], dtype=torch.int64, device=probs.device).view(0, 1)
-                sampling_prob_watermark = torch.tensor([], dtype=probs.dtype, device=probs.device).view(0, 1)
+                tokens_watermark = torch.tensor(
+                    [], dtype=torch.int64, device=probs.device).view(0, 1)
+                sampling_prob_watermark = torch.tensor(
+                    [], dtype=probs.dtype, device=probs.device).view(0, 1)
 
             # combine the results based on the rows
             tokens = torch.zeros((batch_size, 1), dtype=torch.int64)
@@ -265,6 +279,7 @@ def generate_mixed(
         probs_save,
         empty_probs_save
     )
+
 
 def get_probs(
         model, prompts, vocab_size, n, m, seeds, key_func, fixed_inputs

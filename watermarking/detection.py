@@ -82,7 +82,8 @@ def quantile_test(
         ntp = ntp / (1 - ntp) * len(ntp)
 
         test_statistics_before_combination = test_results[test_stat_idx]
-        pvalues_before_combination = np.empty_like(test_statistics_before_combination)
+        pvalues_before_combination = np.empty_like(
+            test_statistics_before_combination)
         # for each row in pvalues_before_combination, the ntp passed to phypoexp is the same
         # for each column, the ntp is different and can be obtained from `ntp` array
         k = len(ntp) + 1 - len(test_statistics_before_combination)
@@ -91,12 +92,16 @@ def quantile_test(
                 test_statistics_before_combination[i],
                 ntp[np.isfinite(ntp)][i:i+k]
             )
-        p_vals[0, test_stat_idx] = cauchy_combine(np.reshape(pvalues_before_combination, (1, -1)))
-        p_values_column = np.empty((1, test_statistics_before_combination.shape[1]))
+        p_vals[0, test_stat_idx] = cauchy_combine(
+            np.reshape(pvalues_before_combination, (1, -1)))
+        p_values_column = np.empty(
+            (1, test_statistics_before_combination.shape[1]))
         for i in range(test_statistics_before_combination.shape[1]):
-            p_values_column[0, i] = cauchy_combine(pvalues_before_combination[:, i])
+            p_values_column[0, i] = cauchy_combine(
+                pvalues_before_combination[:, i])
         p_vals[1, test_stat_idx] = cauchy_combine(p_values_column)
-        p_values_row = np.empty((1, test_statistics_before_combination.shape[0]))
+        p_values_row = np.empty(
+            (1, test_statistics_before_combination.shape[0]))
         for i in range(test_statistics_before_combination.shape[0]):
             p_values_row[0, i] = cauchy_combine(pvalues_before_combination[i])
         p_vals[2, test_stat_idx] = cauchy_combine(p_values_row)
@@ -176,7 +181,8 @@ def adjacency(tokens, xi, dist, k, empty_probs):
     A = torch.empty(size=(m-(k-1), n))
     for i in range(m-(k-1)):
         for j in range(n):
-            A[i][j] = dist(tokens[i:i+k], xi[(j+torch.arange(k)) % n], empty_probs[i:i+k])
+            A[i][j] = dist(tokens[i:i+k], xi[(j+torch.arange(k)) %
+                           n], empty_probs[i:i+k])
 
     return A
 
@@ -287,7 +293,8 @@ def cauchy_combine(pvalues, weights=None):
     else:
         weights = np.asarray(weights)
         if weights.shape != pvalues.shape:
-            raise ValueError("The dimensions of weights do not match those of pvalues.")
+            raise ValueError(
+                "The dimensions of weights do not match those of pvalues.")
 
     # Compute Cauchy statistics
     Cstat = np.tan((0.5 - pvalues) * np.pi)
@@ -352,4 +359,5 @@ if __name__ == "__main__":
     # Combine p-values with specified weights
     combined_pvalues_with_weights = cauchy_combine(pvalues, weights=weights)
 
-    print("Combined p-values with specified weights:", combined_pvalues_with_weights)
+    print("Combined p-values with specified weights:",
+          combined_pvalues_with_weights)

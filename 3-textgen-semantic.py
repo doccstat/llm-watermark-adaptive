@@ -180,6 +180,7 @@ if args.method == "transform":
             empty_prompts=empty_prompts,
             fixed_inputs=fixed_inputs
         )
+
     def generate_watermark_mixed(prompt, seed, empty_prompts, no_watermark_locations):
         return generate_mixed(
             model,
@@ -211,6 +212,7 @@ elif args.method == "gumbel":
             empty_prompts=empty_prompts,
             fixed_inputs=fixed_inputs
         )
+
     def generate_watermark_mixed(prompt, seed, empty_prompts, no_watermark_locations):
         return generate_mixed(
             model,
@@ -310,13 +312,17 @@ for batch in range(n_batches):
     no_watermark_locations = []
     no_watermark_locations_count = int(args.substitution * new_tokens)
     for i in idx:
-        no_watermark_locations_start = torch.randint(0, new_tokens - no_watermark_locations_count, (1,)).item()
-        no_watermark_locations_end = no_watermark_locations_start + no_watermark_locations_count
+        no_watermark_locations_start = torch.randint(
+            0, new_tokens - no_watermark_locations_count, (1,)).item()
+        no_watermark_locations_end = no_watermark_locations_start + \
+            no_watermark_locations_count
         no_watermark_locations.append(
             # torch.randperm(new_tokens)[:no_watermark_locations_count]
-            torch.arange(no_watermark_locations_start, no_watermark_locations_end)
+            torch.arange(no_watermark_locations_start,
+                         no_watermark_locations_end)
         )
-        attacked_idx_writer.writerow(np.asarray(no_watermark_locations[-1].numpy()))
+        attacked_idx_writer.writerow(np.asarray(
+            no_watermark_locations[-1].numpy()))
         attacked_idx_save.flush()
     no_watermark_locations = torch.vstack(no_watermark_locations)
 
@@ -357,7 +363,8 @@ for tokens, _probs, _empty_probs in zip(
 ):
     tokens_before_attack_writer.writerow(np.asarray(tokens.numpy()))
     _probs_writer.writerow(np.asarray(_probs.numpy()[:args.tokens_count]))
-    _empty_probs_writer.writerow(np.asarray(_empty_probs.numpy()[:args.tokens_count]))
+    _empty_probs_writer.writerow(np.asarray(
+        _empty_probs.numpy()[:args.tokens_count]))
     pbar.update(1)
 pbar.close()
 tokens_before_attack_save.close()
@@ -395,9 +402,11 @@ for itm in range(T):
         watermarked_sample, attack_span = deletion_attack_semantic(
             watermarked_sample, tokenizer)
         if attack_span[0] is None or attack_span[1] is None:
-            attacked_idx_writer.writerow(np.asarray(torch.arange(0, 0).numpy()))
+            attacked_idx_writer.writerow(
+                np.asarray(torch.arange(0, 0).numpy()))
         else:
-            attacked_idx_writer.writerow(np.asarray(torch.arange(attack_span[0], attack_span[1]).numpy()))
+            attacked_idx_writer.writerow(np.asarray(
+                torch.arange(attack_span[0], attack_span[1]).numpy()))
         attacked_idx_save.flush()
     elif args.insertion:
         watermarked_sample, attack_span = insertion_attack_semantic(
@@ -409,9 +418,11 @@ for itm in range(T):
         )
         watermarked_sample = watermarked_sample[:new_tokens]
         if attack_span[0] is None or attack_span[1] is None:
-            attacked_idx_writer.writerow(np.asarray(torch.arange(0, 0).numpy()))
+            attacked_idx_writer.writerow(
+                np.asarray(torch.arange(0, 0).numpy()))
         else:
-            attacked_idx_writer.writerow(np.asarray(torch.arange(attack_span[0], min(attack_span[1], new_tokens)).numpy()))
+            attacked_idx_writer.writerow(np.asarray(torch.arange(
+                attack_span[0], min(attack_span[1], new_tokens)).numpy()))
         attacked_idx_save.flush()
 
     watermarked_sample = tokenizer.decode(
@@ -441,7 +452,8 @@ for itm in range(T):
     else:
         watermarked_sample = watermarked_sample[1:new_tokens+1]
     attacked_samples[itm] = watermarked_sample
-    attacked_tokens_writer.writerow(np.asarray(watermarked_sample.numpy()[:args.tokens_count]))
+    attacked_tokens_writer.writerow(np.asarray(
+        watermarked_sample.numpy()[:args.tokens_count]))
     if args.method == "transform":
         generator = torch.Generator()
         generator.manual_seed(int(seeds[itm]))
@@ -474,7 +486,7 @@ icl_prompts = []
 pbar = tqdm(total=n_batches)
 for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
-                        min(T, (batch + 1) * args.batch_size))
+                       min(T, (batch + 1) * args.batch_size))
 
     null_sample, _, _ = generate_rnd(
         torch.vstack(icl_samples)[idx], prompt_tokens + buffer_tokens,
@@ -580,7 +592,8 @@ for batch in range(n_batches):
     )
     if args.method == "transform":
         re_calculated_best_ntps.append(
-            candidate_empty_ntps[best_candidate_idx, torch.arange(len(idx)), :, :]
+            candidate_empty_ntps[best_candidate_idx,
+                                 torch.arange(len(idx)), :, :]
         )
 
     for bc_idx, itm in zip(best_candidate_idx.tolist(), idx):

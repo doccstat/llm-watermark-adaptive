@@ -1471,7 +1471,7 @@ log_file.write(f'Ran watermarked test in (t = {time.time()-t0} seconds)\n')
 log_file.flush()
 np.savetxt(
     args.token_file + '-' + str(args.k) + '-detect/watermarked-' +
-                     str(args.Tindex) + '.csv', watermarked_pval, delimiter=','
+    str(args.Tindex) + '.csv', watermarked_pval, delimiter=','
 )
 # csvWriters[0].writerow(np.asarray(watermarked_pval))
 # csv_saves[0].flush()

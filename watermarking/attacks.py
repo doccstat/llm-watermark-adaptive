@@ -1,5 +1,6 @@
 import torch
 
+
 def substitution_attack(tokens, p, vocab_size, distribution=None):
     if distribution is None:
         def distribution(x): return torch.ones(
@@ -39,6 +40,7 @@ def is_sublist(sub, main):
         if main[i:i + sub_len] == sub:
             return True, i
     return False, -1
+
 
 def deletion_attack_semantic(tokens, tokenizer):
     """
@@ -187,7 +189,8 @@ def insertion_attack_semantic(tokens, prompt, tokenizer, model, max_insert_lengt
         if prompt.dim() == 1:
             prompt = prompt.unsqueeze(0)
         elif prompt.dim() != 2:
-            raise ValueError(f"Prompt tensor must be 1D or 2D, but got {prompt.dim()}D.")
+            raise ValueError(f"Prompt tensor must be 1D or 2D, but got {
+                             prompt.dim()}D.")
 
         # Move prompt to the same device as model and input_ids
         prompt = prompt.to(device)
@@ -198,7 +201,8 @@ def insertion_attack_semantic(tokens, prompt, tokenizer, model, max_insert_lengt
         # Generate tokens until a period is generated to ensure a complete sentence
         generated_ids = model.generate(
             input_ids,
-            max_length=input_ids.shape[1] + max_insert_length,  # Adjust max_length as needed
+            # Adjust max_length as needed
+            max_length=input_ids.shape[1] + max_insert_length,
             do_sample=True,
             temperature=0.7,
             top_p=0.9,
@@ -221,7 +225,8 @@ def insertion_attack_semantic(tokens, prompt, tokenizer, model, max_insert_lengt
     # Insert the new sentence between the first and second sentences
     inserted_text = new_sentence + " "
     # Reconstruct the attacked text
-    attacked_text = parts[0].strip() + ". " + inserted_text + ". ".join(parts[1:])
+    attacked_text = parts[0].strip() + ". " + \
+        inserted_text + ". ".join(parts[1:])
 
     # Encode the attacked text back into tokens
     attacked_tokens = tokenizer.encode(
@@ -231,8 +236,10 @@ def insertion_attack_semantic(tokens, prompt, tokenizer, model, max_insert_lengt
         max_length=2048
     )[0].to(device)
 
-    attack_start = len(tokenizer.encode(parts[0], return_tensors='pt', truncation=True, max_length=2048)[0])
-    attack_end = len(tokenizer.encode(parts[0].strip() + ". " + inserted_text, return_tensors='pt', truncation=True, max_length=2048)[0])
+    attack_start = len(tokenizer.encode(
+        parts[0], return_tensors='pt', truncation=True, max_length=2048)[0])
+    attack_end = len(tokenizer.encode(parts[0].strip(
+    ) + ". " + inserted_text, return_tensors='pt', truncation=True, max_length=2048)[0])
 
     # Define the attack span as the insertion point in the original tokens
     attack_span = (attack_start, attack_end)
