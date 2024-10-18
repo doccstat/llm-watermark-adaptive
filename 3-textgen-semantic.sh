@@ -1,19 +1,19 @@
 #!/bin/bash
 
-#SBATCH --job-name=textgen-instruct
+#SBATCH --job-name=textgen-semantic
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 
-#SBATCH --time=1-00:00:00
+#SBATCH --time=0-12:00:00
 #SBATCH --partition=gpu,xgpu
 #SBATCH --gres=gpu:a30:2
 
-#SBATCH --mem=5GB
-#SBATCH --output=/home/anthony.li/out/textgen-instruct.%A.%a.out
-#SBATCH --error=/home/anthony.li/out/textgen-instruct.%A.%a.err
+#SBATCH --mem=35GB
+#SBATCH --output=/home/anthony.li/out/textgen-semantic.%A.%a.out
+#SBATCH --error=/home/anthony.li/out/textgen-semantic.%A.%a.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
-#SBATCH --array=1-72
+#SBATCH --array=1-10
 
 module purge
 module load Python/3.11.5-GCCcore-13.2.0
@@ -30,9 +30,9 @@ export PATH="/home/anthony.li/.local/bin:$PATH"
 export PYTHONPATH=".":$PYTHONPATH
 export HF_HOME=/scratch/user/anthony.li/hf_cache
 
-# Determine the total number of commands by counting lines in 3-textgen-instruct-commands.sh
-total_commands=$(wc -l < 3-textgen-instruct-commands.sh)
-total_jobs=72
+# Determine the total number of commands by counting lines in 3-textgen-semantic-commands.sh
+total_commands=$(wc -l < 3-textgen-semantic-commands.sh)
+total_jobs=10
 
 # Calculate the number of commands per job (minimum)
 commands_per_job=$((total_commands / total_jobs))
@@ -53,7 +53,8 @@ echo "Running tasks for commands from $start_command to $end_command"
 
 # Loop over the designated commands for this job
 for i in $(seq $start_command $end_command); do
-    command=$(sed -n "${i}p" 3-textgen-instruct-commands.sh)
+    command=$(sed -n "${i}p" 3-textgen-semantic-commands.sh)
     echo "Executing command $i: $command"
+    echo "Command $i starting time: $(date)"
     eval "$command"
 done
