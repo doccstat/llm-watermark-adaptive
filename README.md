@@ -158,14 +158,18 @@ done
             # "rm -rf results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts-$k-detect"
 
 # sbatch --dependency=afterok:<jobid> 4-detect.sh
-sbatch 4-detect.sh
-sacct -j <jobid> --format=JobID,JobName,State,ExitCode | grep detect
-sacct -j <jobid> --format=JobID,JobName,State,ExitCode --parsable2 | awk -F'|' '
+jobid=$(sbatch --parsable 4-detect.sh)
+sacct -j $jobid --format=JobID,JobName,State,ExitCode --noheader | grep detect
+sacct -j $jobid --format=JobID,JobName,State,ExitCode --parsable2 | awk -F'|' '
   /detect/ {
+    if ($3 == "NODE_FAIL") { node_fail++ }
+    if ($3 == "PENDING") { pending++ }
     if ($3 == "COMPLETED") { completed++ }
     if ($3 == "RUNNING" ) { running++ }
   }
   END {
+    print "Node fail:", node_fail
+    print "Pending:", pending
     print "Completed:", completed
     print "Running:", running
   }'
