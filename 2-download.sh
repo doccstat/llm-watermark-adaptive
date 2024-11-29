@@ -6,8 +6,8 @@
 #SBATCH --time=1-00:00:00
 #SBATCH --partition=medium,long,xlong
 #SBATCH --mem-per-cpu=1GB
-#SBATCH --output=/home/anthony.li/out/download.%j.out
-#SBATCH --error=/home/anthony.li/out/download.%j.err
+#SBATCH --output=/home/anthony.li/llm-watermark-adaptive/log/download.%j.out
+#SBATCH --error=/home/anthony.li/llm-watermark-adaptive/log/download.%j.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
 

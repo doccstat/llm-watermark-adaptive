@@ -8,9 +8,9 @@
 #SBATCH --partition=gpu,xgpu
 #SBATCH --gres=gpu:a30:2
 
-#SBATCH --mem=35GB
-#SBATCH --output=/home/anthony.li/out/textgen-semantic.%A.%a.out
-#SBATCH --error=/home/anthony.li/out/textgen-semantic.%A.%a.err
+#SBATCH --mem=70GB
+#SBATCH --output=/home/anthony.li/llm-watermark-adaptive/log/textgen-semantic.%A.%a.out
+#SBATCH --error=/home/anthony.li/llm-watermark-adaptive/log/textgen-semantic.%A.%a.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
 #SBATCH --array=1-10
