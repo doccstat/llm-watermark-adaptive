@@ -161,15 +161,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-watermarking/gumbel/ems_levenshtein.c
-watermarking/gumbel/gumbel_levenshtein.c
-watermarking/transform/its_levenshtein.c
-watermarking/transform/transform_levenshtein.c
+watermarking/transform/*.c
+watermarking/gumbel/*.c
 results/
-.Rhistory
-sshloginfile.txt
-3-textgen-instruct-commands.sh
 3-textgen-semantic-commands.sh
 4-detect-commands.sh
 *.tar.gz
-.DS_Store
