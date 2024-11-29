@@ -189,8 +189,9 @@ def insertion_attack_semantic(tokens, prompt, tokenizer, model, max_insert_lengt
         if prompt.dim() == 1:
             prompt = prompt.unsqueeze(0)
         elif prompt.dim() != 2:
-            raise ValueError(f"Prompt tensor must be 1D or 2D, but got {
-                             prompt.dim()}D.")
+            raise ValueError(
+                f"Prompt tensor must be 1D or 2D, but got {prompt.dim()}D."
+            )
 
         # Move prompt to the same device as model and input_ids
         prompt = prompt.to(device)
