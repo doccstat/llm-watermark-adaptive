@@ -164,6 +164,6 @@ cython_debug/
 watermarking/transform/*.c
 watermarking/gumbel/*.c
 results/
-3-textgen-semantic-commands.sh
+3-textgen-commands.sh
 4-detect-commands.sh
 *.tar.gz

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=textgen-semantic
+#SBATCH --job-name=textgen
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 
@@ -9,8 +9,8 @@
 #SBATCH --gres=gpu:a30:2
 
 #SBATCH --mem=70GB
-#SBATCH --output=/home/anthony.li/llm-watermark-adaptive/log/textgen-semantic.%A.%a.out
-#SBATCH --error=/home/anthony.li/llm-watermark-adaptive/log/textgen-semantic.%A.%a.err
+#SBATCH --output=/home/anthony.li/llm-watermark-adaptive/log/textgen.%A.%a.out
+#SBATCH --error=/home/anthony.li/llm-watermark-adaptive/log/textgen.%A.%a.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
 #SBATCH --array=1-10
@@ -30,8 +30,8 @@ export PATH="/home/anthony.li/.local/bin:$PATH"
 export PYTHONPATH=".":$PYTHONPATH
 export HF_HOME=/scratch/user/anthony.li/hf_cache
 
-# Determine the total number of commands by counting lines in 3-textgen-semantic-commands.sh
-total_commands=$(wc -l < 3-textgen-semantic-commands.sh)
+# Determine the total number of commands by counting lines in 3-textgen-commands.sh
+total_commands=$(wc -l < 3-textgen-commands.sh)
 total_jobs=10
 
 # Calculate the number of commands per job (minimum)
@@ -53,7 +53,7 @@ echo "Running tasks for commands from $start_command to $end_command"
 
 # Loop over the designated commands for this job
 for i in $(seq $start_command $end_command); do
-    command=$(sed -n "${i}p" 3-textgen-semantic-commands.sh)
+    command=$(sed -n "${i}p" 3-textgen-commands.sh)
     echo "Executing command $i: $command"
     echo "Command $i starting time: $(date)"
     eval "$command"
