@@ -1,22 +1,22 @@
-import sys
-import numpy as np
+from torch.linalg import norm
+
+from torch import pow as torch_pow
+
 from watermarking.transform.transform_levenshtein import transform_levenshtein
-from watermarking.transform.its_levenshtein import its_levenshtein
-
-import torch
 
 
-def transform_score(tokens, xi):
-    return torch.pow(torch.linalg.norm(tokens-xi.squeeze(), ord=1), 1)
+def transform_score(tokens, xi, probs=None):
+    metrics = tokens-xi.squeeze()
+    return torch_pow(norm(metrics, ord=1), 1)
+
+
+def transform_adaptive(tokens, xi, probs, shrinkage=1.0):
+    # Shrinkage
+    probs = shrinkage * probs + (1 - shrinkage) * 0.5
+
+    metrics = (1 / probs - 1) * (tokens-xi.squeeze())
+    return torch_pow(norm(metrics, ord=1), 1)
 
 
 def transform_edit_score(tokens, xi, gamma=1):
     return transform_levenshtein(tokens.numpy(), xi.squeeze().numpy(), gamma)
-
-
-def its_score(tokens, xi, vocab_size):
-    return -torch.inner(xi.squeeze() - 0.5, (tokens - 1) / (vocab_size - 1) - 0.5) / len(tokens)
-
-
-def itsl_score(tokens, xi, vocab_size, gamma=1):
-    return its_levenshtein(tokens.numpy(), xi.squeeze().numpy(), gamma, vocab_size)
