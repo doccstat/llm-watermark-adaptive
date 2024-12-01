@@ -2,8 +2,8 @@
 
 rm -f 4-detect-commands.sh
 
-for k_tokens_count_ratio in 1.0; do
-  for model_prefix in ml3; do
+for k_tokens_count_ratio in 0.3 0.6 1.0; do
+  for model_prefix in ml3 mt7; do
     if [ "$model_prefix" = "ml3" ]; then
       model="meta-llama/Meta-Llama-3-8B"
     else
@@ -22,8 +22,9 @@ for k_tokens_count_ratio in 1.0; do
 
         k=$(awk "BEGIN {print int($tokens_count * $k_tokens_count_ratio)}")
 
-        for method in gumbel; do
+        for method in gumbel transform; do
           for pcts in "${pcts_list[@]}"; do
+            rm -rf results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts-$k-detect
             mkdir -p results/$model_prefix-$method-$attack-$watermark_key_length-$tokens_count-$pcts-$k-detect
 
             for Tindex in $(seq 0 99); do

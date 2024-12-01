@@ -13,7 +13,7 @@
 #SBATCH --error=/home/anthony.li/llm-watermark-adaptive/log/textgen.%A.%a.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
-#SBATCH --array=1-10
+#SBATCH --array=1-30
 
 module purge
 module load Python/3.11.5-GCCcore-13.2.0
@@ -32,7 +32,7 @@ export HF_HOME=/scratch/user/anthony.li/hf_cache
 
 # Determine the total number of commands by counting lines in 3-textgen-commands.sh
 total_commands=$(wc -l < 3-textgen-commands.sh)
-total_jobs=10
+total_jobs=30
 
 # Calculate the number of commands per job (minimum)
 commands_per_job=$((total_commands / total_jobs))
@@ -55,6 +55,5 @@ echo "Running tasks for commands from $start_command to $end_command"
 for i in $(seq $start_command $end_command); do
     command=$(sed -n "${i}p" 3-textgen-commands.sh)
     echo "Executing command $i: $command"
-    echo "Command $i starting time: $(date)"
     eval "$command"
 done
