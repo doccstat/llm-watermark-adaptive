@@ -1,6 +1,6 @@
-import torch
+from torch import argmax, gather
 
 
 def gumbel_sampling(probs, pi, xi):
-    tokens = torch.argmax(xi ** (1/torch.gather(probs, 1, pi)), axis=1).unsqueeze(-1)
-    return tokens, torch.gather(torch.gather(probs, 1, pi), 1, tokens)
+    tokens = argmax(xi ** (1/gather(probs, 1, pi)), axis=1).unsqueeze(-1)
+    return tokens, gather(gather(probs, 1, pi), 1, tokens)
