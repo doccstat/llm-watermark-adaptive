@@ -9,7 +9,7 @@ from numpy import genfromtxt
 
 from watermarking.detection import permutation_test, phi, quantile_test
 
-from watermarking.transform.score import transform_score
+from watermarking.transform.score import transform_score, transform_adaptive
 from watermarking.transform.key import transform_key_func
 
 from watermarking.gumbel.score import ems_score, ems_adaptive
@@ -91,8 +91,14 @@ log_file.flush()
 if args.method == "transform":
     test_stats = []
 
+    true_probs = torch.from_numpy(genfromtxt(
+        args.token_file + '-re-calculated-probs.csv', delimiter=','
+    )[Tindex, :])
     empty_probs = torch.from_numpy(genfromtxt(
         args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
+    )[Tindex, :])
+    best_probs = torch.from_numpy(genfromtxt(
+        args.token_file + '-re-calculated-best-probs.csv', delimiter=','
     )[Tindex, :])
 
     def dist_its(x, y, probs): return transform_score(x, y)
@@ -110,10 +116,457 @@ if args.method == "transform":
             dist=dist_its,
             empty_probs=empty_probs,
             null=False,
-            normalize=True
+            normalize=True,
+            asis=False
         )
     test_stats.append(test_stat_its)
 
+    # `true_probs`
+
+    def dist_its_adaptive_true(x, y, probs):
+        return transform_adaptive(x, y, probs, 1.0)
+
+    def test_stat_its_adaptive_true(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_true,
+            empty_probs=true_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_true)
+
+    # `empty_probs`
+
+    def dist_its_adaptive_empty_1(x, y, probs):
+        return transform_adaptive(x, y, probs, 1.0)
+
+    def test_stat_its_adaptive_empty_1(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_empty_1,
+            empty_probs=empty_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_empty_1)
+
+    def dist_its_adaptive_empty_2(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.9)
+
+    def test_stat_its_adaptive_empty_2(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_empty_2,
+            empty_probs=empty_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_empty_2)
+
+    def dist_its_adaptive_empty_3(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.8)
+
+    def test_stat_its_adaptive_empty_3(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_empty_3,
+            empty_probs=empty_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_empty_3)
+
+    def dist_its_adaptive_empty_4(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.7)
+
+    def test_stat_its_adaptive_empty_4(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_empty_4,
+            empty_probs=empty_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_empty_4)
+
+    def dist_its_adaptive_empty_5(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.6)
+
+    def test_stat_its_adaptive_empty_5(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_empty_5,
+            empty_probs=empty_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_empty_5)
+
+    def dist_its_adaptive_empty_6(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.5)
+
+    def test_stat_its_adaptive_empty_6(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_empty_6,
+            empty_probs=empty_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_empty_6)
+
+    def dist_its_adaptive_empty_7(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.4)
+
+    def test_stat_its_adaptive_empty_7(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_empty_7,
+            empty_probs=empty_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_empty_7)
+
+    def dist_its_adaptive_empty_8(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.3)
+
+    def test_stat_its_adaptive_empty_8(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_empty_8,
+            empty_probs=empty_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_empty_8)
+
+    def dist_its_adaptive_empty_9(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.2)
+
+    def test_stat_its_adaptive_empty_9(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_empty_9,
+            empty_probs=empty_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_empty_9)
+
+    def dist_its_adaptive_empty_10(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.1)
+
+    def test_stat_its_adaptive_empty_10(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_empty_10,
+            empty_probs=empty_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_empty_10)
+
+    # `best_probs`
+
+    def dist_its_adaptive_best_1(x, y, probs):
+        return transform_adaptive(x, y, probs, 1.0)
+
+    def test_stat_its_adaptive_best_1(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_best_1,
+            empty_probs=best_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_best_1)
+
+    def dist_its_adaptive_best_2(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.9)
+
+    def test_stat_its_adaptive_best_2(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_best_2,
+            empty_probs=best_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_best_2)
+
+    def dist_its_adaptive_best_3(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.8)
+
+    def test_stat_its_adaptive_best_3(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_best_3,
+            empty_probs=best_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_best_3)
+
+    def dist_its_adaptive_best_4(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.7)
+
+    def test_stat_its_adaptive_best_4(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_best_4,
+            empty_probs=best_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_best_4)
+
+    def dist_its_adaptive_best_5(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.6)
+
+    def test_stat_its_adaptive_best_5(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_best_5,
+            empty_probs=best_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_best_5)
+
+    def dist_its_adaptive_best_6(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.5)
+
+    def test_stat_its_adaptive_best_6(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_best_6,
+            empty_probs=best_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_best_6)
+
+    def dist_its_adaptive_best_7(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.4)
+
+    def test_stat_its_adaptive_best_7(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_best_7,
+            empty_probs=best_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_best_7)
+
+    def dist_its_adaptive_best_8(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.3)
+
+    def test_stat_its_adaptive_best_8(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_best_8,
+            empty_probs=best_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_best_8)
+
+    def dist_its_adaptive_best_9(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.2)
+
+    def test_stat_its_adaptive_best_9(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_best_9,
+            empty_probs=best_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_best_9)
+
+    def dist_its_adaptive_best_10(x, y, probs):
+        return transform_adaptive(x, y, probs, 0.1)
+
+    def test_stat_its_adaptive_best_10(
+        tokens, n, k, generator, vocab_size, null=False
+    ):
+        return phi(
+            tokens=tokens,
+            n=n,
+            k=k,
+            generator=generator,
+            key_func=transform_key_func,
+            vocab_size=vocab_size,
+            dist=dist_its_adaptive_best_10,
+            empty_probs=best_probs,
+            null=False,
+            normalize=True,
+            asis=False
+        )
+    test_stats.append(test_stat_its_adaptive_best_10)
 
 elif args.method == "gumbel":
     test_stats = []
@@ -1469,6 +1922,8 @@ t0 = time.time()
 watermarked_pval = test(watermarked_sample, seeds[Tindex], test_stats)
 log_file.write(f'Ran watermarked test in (t = {time.time()-t0} seconds)\n')
 log_file.flush()
+if watermarked_pval.ndim == 1:
+    watermarked_pval = watermarked_pval.reshape(1, -1)
 np.savetxt(
     args.token_file + '-' + str(args.k) + '-detect/watermarked-' +
     str(args.Tindex) + '.csv', watermarked_pval, delimiter=','

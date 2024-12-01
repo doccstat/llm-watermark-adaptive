@@ -24,7 +24,6 @@ from watermarking.gumbel.key import gumbel_key_func
 import argparse
 
 import csv
-import json
 
 parser = argparse.ArgumentParser(description="Experiment Settings")
 
@@ -62,10 +61,6 @@ parser.add_argument('--truncate_vocab', default=8, type=int)
 
 args = parser.parse_args()
 
-log_file = open('log/textgen.log', 'w')
-log_file.write(str(args) + '\n')
-log_file.flush()
-
 # fix the random seed for reproducibility
 t0 = time()
 torch.manual_seed(args.seed)
@@ -79,18 +74,12 @@ try:
         device_map='auto'
     )
 
-    log_file.write(f'Loaded the local model\n')
 except:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
-    log_file.write(f'Loaded the model\n')
-
-log_file.flush()
 
 vocab_size = model.get_output_embeddings().weight.shape[0]
 eff_vocab_size = vocab_size - args.truncate_vocab
-log_file.write(f'Loaded the model (t = {time()-t0} seconds)\n')
-log_file.flush()
 
 try:
     dataset = load_from_disk(
@@ -299,7 +288,6 @@ empty_prompt_save.close()
 # attacked watermarked texts.
 candidate_prompts.append(torch.vstack([candidate_token for _ in range(T)]))
 watermarked_samples, watermarked_probs, watermarked_empty_probs = [], [], []
-watermarked_ntps, watermarked_empty_ntps = [], []
 
 attacked_idx_save = open(args.save + "-attacked-idx.csv", "w")
 attacked_idx_writer = csv.writer(attacked_idx_save, delimiter=",")
@@ -326,14 +314,11 @@ for batch in range(n_batches):
         attacked_idx_save.flush()
     no_watermark_locations = torch.vstack(no_watermark_locations)
 
-    watermarked_sample, watermarked_prob, watermarked_empty_prob, watermarked_ntp, watermarked_empty_ntp = generate_watermark_mixed(
+    watermarked_sample, watermarked_prob, watermarked_empty_prob, _, _ = generate_watermark_mixed(
         prompts[idx], seeds[idx], candidate_prompts[-1][idx], no_watermark_locations)
     watermarked_samples.append(watermarked_sample[:, prompt_tokens:])
     watermarked_probs.append(watermarked_prob)
     watermarked_empty_probs.append(watermarked_empty_prob)
-    if args.method == "transform":
-        watermarked_ntps.append(watermarked_ntp)
-        watermarked_empty_ntps.append(watermarked_empty_ntp.cpu())
     pbar.update(1)
 pbar.close()
 attacked_idx_save.close()
@@ -343,9 +328,6 @@ watermarked_probs = torch.vstack(watermarked_probs)
 watermarked_empty_probs = torch.vstack(watermarked_empty_probs)
 
 watermarked_samples = torch.clip(watermarked_samples, max=eff_vocab_size-1)
-
-log_file.write(f'Generated samples in (t = {time()-t1} seconds)\n')
-log_file.flush()
 
 # Save the text/tokens before attack and NTP for each token in the watermark
 # texts with true and empty prompt.
@@ -370,11 +352,6 @@ pbar.close()
 tokens_before_attack_save.close()
 _probs_save.close()
 _empty_probs_save.close()
-np.save(args.save + '-ntps.npy', watermarked_ntps)
-np.save(args.save + '-empty-ntps.npy', watermarked_empty_ntps)
-log_file.write(
-    f'Saved text/tokens before attack and probs in (t = {time()-t1} seconds)\n')
-log_file.flush()
 
 # Attack the watermarked texts and store a copy appended with the
 # prompt-extracting prompt in `icl_samples`.
@@ -467,8 +444,6 @@ for itm in range(T):
     pbar.update(1)
 
 pbar.close()
-log_file.write(f'Attacked the samples in (t = {time()-t1} seconds)\n')
-log_file.flush()
 if args.deletion or args.insertion:
     attacked_idx_save.close()
 attacked_tokens_save.close()
@@ -529,7 +504,6 @@ re_calculated_icl_probs_writer = csv.writer(
     re_calculated_icl_probs_save, delimiter=",")
 best_prompt_save = open(args.save + '-best-prompt.csv', 'w')
 best_prompt_writer = csv.writer(best_prompt_save, delimiter=",")
-re_calculated_ntps, re_calculated_best_ntps, re_calculated_empty_ntps, re_calculated_icl_ntps = [], [], [], []
 
 pbar = tqdm(total=n_batches * (8 + 2))
 for batch in range(n_batches):
@@ -546,41 +520,27 @@ for batch in range(n_batches):
     ])
     candidate_prompts_subset.append(candidate_prompts[-2])
     candidate_prompts_subset.append(candidate_prompts[-1])
-    candidate_probs, candidate_empty_ntps = [], []
+    candidate_probs = []
     for candidate_prompt_idx, candidate_prompt in enumerate(candidate_prompts_subset):
-        _, watermarked_prob, watermarked_empty_prob, ntps, empty_ntps = generate_watermark(
+        _, watermarked_prob, watermarked_empty_prob, _, _ = generate_watermark(
             prompts[idx], seeds[idx], candidate_prompt[idx],
             fixed_inputs=attacked_samples[idx])
 
         # `watermarked_empty_prob` is of shape (len(idx), new_tokens)
         candidate_probs.append(watermarked_empty_prob)
 
-        if args.method == "transform":
-            # all probs and all empty probs are of shape (len(idx), vocab_size, new_tokens)
-            candidate_empty_ntps.append(empty_ntps.cpu())
-
         if candidate_prompt_idx == 0:
             re_calculated_probs.append(watermarked_prob)
-            if args.method == "transform":
-                re_calculated_ntps.append(ntps)
         if candidate_prompt_idx == len(candidate_prompts_subset) - 2:
             re_calculated_empty_probs.append(watermarked_empty_prob)
-            if args.method == "transform":
-                re_calculated_empty_ntps.append(empty_ntps.cpu())
         elif candidate_prompt_idx == len(candidate_prompts_subset) - 1:
             re_calculated_icl_probs.append(watermarked_empty_prob)
-            if args.method == "transform":
-                re_calculated_icl_ntps.append(empty_ntps.cpu())
 
         pbar.update(1)
 
     # Convert list to tensor before applying tensor operations
     # `candidate_probs` is of shape (len(candidate_prompts_subset), len(idx), new_tokens)
     candidate_probs = torch.stack(candidate_probs)
-
-    if args.method == "transform":
-        # `candidate_empty_ntps` are of shape (len(candidate_prompts_subset), len(idx), vocab_size, new_tokens)
-        candidate_empty_ntps = torch.stack(candidate_empty_ntps)
 
     # Now perform the log and sum operations on the tensor
     best_candidate_idx = torch.argmax(
@@ -590,11 +550,6 @@ for batch in range(n_batches):
     re_calculated_best_probs.append(
         candidate_probs[best_candidate_idx, torch.arange(len(idx)), :]
     )
-    if args.method == "transform":
-        re_calculated_best_ntps.append(
-            candidate_empty_ntps[best_candidate_idx,
-                                 torch.arange(len(idx)), :, :]
-        )
 
     for bc_idx, itm in zip(best_candidate_idx.tolist(), idx):
         best_prompt.append(candidate_prompts_subset[bc_idx][itm])
@@ -627,10 +582,6 @@ re_calculated_best_probs_save.close()
 re_calculated_empty_probs_save.close()
 re_calculated_icl_probs_save.close()
 best_prompt_save.close()
-np.save(args.save + '-re-calculated-ntps.npy', re_calculated_ntps)
-np.save(args.save + '-re-calculated-best-ntps.npy', re_calculated_best_ntps)
-np.save(args.save + '-re-calculated-empty-ntps.npy', re_calculated_empty_ntps)
-np.save(args.save + '-re-calculated-icl-ntps.npy', re_calculated_icl_ntps)
 
 re_calculated_98_probs = []
 re_calculated_96_probs = []
@@ -667,7 +618,6 @@ re_calculated_20_probs_save = open(
     args.save + "-re-calculated-20-probs.csv", "w")
 re_calculated_20_probs_writer = csv.writer(
     re_calculated_20_probs_save, delimiter=",")
-re_calculated_98_ntps, re_calculated_96_ntps, re_calculated_90_ntps, re_calculated_80_ntps, re_calculated_60_ntps, re_calculated_40_ntps, re_calculated_20_ntps = [], [], [], [], [], [], []
 
 # Create modified prompts for the 20%, 40%, 60%, 80%, 90%, 96%, and 98% cases.
 candidate_98_prompts = []
@@ -725,12 +675,10 @@ for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
                        min(T, (batch + 1) * args.batch_size))
 
-    _, _, watermarked_empty_prob, _, watermarked_empty_ntp = generate_watermark(
+    _, _, watermarked_empty_prob, _, _ = generate_watermark(
         prompts[idx], seeds[idx], candidate_98_prompts[idx],
         fixed_inputs=attacked_samples[idx])
     re_calculated_98_probs.append(watermarked_empty_prob)
-    if args.method == "transform":
-        re_calculated_98_ntps.append(watermarked_empty_ntp.cpu())
 
     pbar.update(1)
 pbar.close()
@@ -739,19 +687,16 @@ for itm in range(T):
     re_calculated_98_probs_writer.writerow(
         np.asarray(re_calculated_98_probs[itm].numpy()[:args.tokens_count]))
 re_calculated_98_probs_save.close()
-np.save(args.save + '-re-calculated-98-ntps.npy', re_calculated_98_ntps)
 
 pbar = tqdm(total=n_batches)
 for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
                        min(T, (batch + 1) * args.batch_size))
 
-    _, _, watermarked_empty_prob, _, watermarked_empty_ntp = generate_watermark(
+    _, _, watermarked_empty_prob, _, _ = generate_watermark(
         prompts[idx], seeds[idx], candidate_96_prompts[idx],
         fixed_inputs=attacked_samples[idx])
     re_calculated_96_probs.append(watermarked_empty_prob)
-    if args.method == "transform":
-        re_calculated_96_ntps.append(watermarked_empty_ntp.cpu())
 
     pbar.update(1)
 pbar.close()
@@ -760,19 +705,16 @@ for itm in range(T):
     re_calculated_96_probs_writer.writerow(
         np.asarray(re_calculated_96_probs[itm].numpy()[:args.tokens_count]))
 re_calculated_96_probs_save.close()
-np.save(args.save + '-re-calculated-96-ntps.npy', re_calculated_96_ntps)
 
 pbar = tqdm(total=n_batches)
 for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
                        min(T, (batch + 1) * args.batch_size))
 
-    _, _, watermarked_empty_prob, _, watermarked_empty_ntp = generate_watermark(
+    _, _, watermarked_empty_prob, _, _ = generate_watermark(
         prompts[idx], seeds[idx], candidate_90_prompts[idx],
         fixed_inputs=attacked_samples[idx])
     re_calculated_90_probs.append(watermarked_empty_prob)
-    if args.method == "transform":
-        re_calculated_90_ntps.append(watermarked_empty_ntp.cpu())
 
     pbar.update(1)
 pbar.close()
@@ -781,19 +723,16 @@ for itm in range(T):
     re_calculated_90_probs_writer.writerow(
         np.asarray(re_calculated_90_probs[itm].numpy()[:args.tokens_count]))
 re_calculated_90_probs_save.close()
-np.save(args.save + '-re-calculated-90-ntps.npy', re_calculated_90_ntps)
 
 pbar = tqdm(total=n_batches)
 for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
                        min(T, (batch + 1) * args.batch_size))
 
-    _, _, watermarked_empty_prob, _, watermarked_empty_ntp = generate_watermark(
+    _, _, watermarked_empty_prob, _, _ = generate_watermark(
         prompts[idx], seeds[idx], candidate_80_prompts[idx],
         fixed_inputs=attacked_samples[idx])
     re_calculated_80_probs.append(watermarked_empty_prob)
-    if args.method == "transform":
-        re_calculated_80_ntps.append(watermarked_empty_ntp.cpu())
 
     pbar.update(1)
 pbar.close()
@@ -802,19 +741,16 @@ for itm in range(T):
     re_calculated_80_probs_writer.writerow(
         np.asarray(re_calculated_80_probs[itm].numpy()[:args.tokens_count]))
 re_calculated_80_probs_save.close()
-np.save(args.save + '-re-calculated-80-ntps.npy', re_calculated_80_ntps)
 
 pbar = tqdm(total=n_batches)
 for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
                        min(T, (batch + 1) * args.batch_size))
 
-    _, _, watermarked_empty_prob, _, watermarked_empty_ntp = generate_watermark(
+    _, _, watermarked_empty_prob, _, _ = generate_watermark(
         prompts[idx], seeds[idx], candidate_60_prompts[idx],
         fixed_inputs=attacked_samples[idx])
     re_calculated_60_probs.append(watermarked_empty_prob)
-    if args.method == "transform":
-        re_calculated_60_ntps.append(watermarked_empty_ntp.cpu())
 
     pbar.update(1)
 pbar.close()
@@ -823,19 +759,16 @@ for itm in range(T):
     re_calculated_60_probs_writer.writerow(
         np.asarray(re_calculated_60_probs[itm].numpy()[:args.tokens_count]))
 re_calculated_60_probs_save.close()
-np.save(args.save + '-re-calculated-60-ntps.npy', re_calculated_60_ntps)
 
 pbar = tqdm(total=n_batches)
 for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
                        min(T, (batch + 1) * args.batch_size))
 
-    _, _, watermarked_empty_prob, _, watermarked_empty_ntp = generate_watermark(
+    _, _, watermarked_empty_prob, _, _ = generate_watermark(
         prompts[idx], seeds[idx], candidate_40_prompts[idx],
         fixed_inputs=attacked_samples[idx])
     re_calculated_40_probs.append(watermarked_empty_prob)
-    if args.method == "transform":
-        re_calculated_40_ntps.append(watermarked_empty_ntp.cpu())
 
     pbar.update(1)
 pbar.close()
@@ -844,19 +777,16 @@ for itm in range(T):
     re_calculated_40_probs_writer.writerow(
         np.asarray(re_calculated_40_probs[itm].numpy()[:args.tokens_count]))
 re_calculated_40_probs_save.close()
-np.save(args.save + '-re-calculated-40-ntps.npy', re_calculated_40_ntps)
 
 pbar = tqdm(total=n_batches)
 for batch in range(n_batches):
     idx = torch.arange(batch * args.batch_size,
                        min(T, (batch + 1) * args.batch_size))
 
-    _, _, watermarked_empty_prob, _, watermarked_empty_ntp = generate_watermark(
+    _, _, watermarked_empty_prob, _, _ = generate_watermark(
         prompts[idx], seeds[idx], candidate_20_prompts[idx],
         fixed_inputs=attacked_samples[idx])
     re_calculated_20_probs.append(watermarked_empty_prob)
-    if args.method == "transform":
-        re_calculated_20_ntps.append(watermarked_empty_ntp.cpu())
 
     pbar.update(1)
 pbar.close()
@@ -865,6 +795,3 @@ for itm in range(T):
     re_calculated_20_probs_writer.writerow(
         np.asarray(re_calculated_20_probs[itm].numpy()[:args.tokens_count]))
 re_calculated_20_probs_save.close()
-np.save(args.save + '-re-calculated-20-ntps.npy', re_calculated_20_ntps)
-
-log_file.close()

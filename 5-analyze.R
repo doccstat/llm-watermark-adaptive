@@ -3,7 +3,7 @@ set.seed(1)
 folder <- "results/"
 models <- c("meta-llama/Meta-Llama-3-8B", "mistralai/Mistral-7B-v0.1")
 models_folders_prefix <- c("ml3", "mt7")
-generation_methods <- c("gumbel")
+generation_methods <- c("gumbel", "transform")
 attacks <- c("substitution", "deletion", "insertion")
 k_tokens_count_ratio_list <- c(0.3, 0.6, 1.0)
 watermark_key_token_pairs <- matrix(c(
@@ -59,7 +59,7 @@ for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) { # nolint
   }
 }
 
-prompt_count <- 1000
+prompt_count <- 100
 dfs <- list()
 filename <- sub("XXX", 0, paste0(pvalue_files_templates[1, ], collapse = ""))
 metric_count <- ncol(read.csv(filename, header = FALSE))
@@ -196,8 +196,8 @@ for (model_prefix in models_folders_prefix) {
 
 ################################################################################
 
-interested_metrics <- c(1, 2, 11, 24)
-interested_metrics_level <- c(2, 24, 11, 1)
+interested_metrics <- c(1, 2, 8, 18)
+interested_metrics_level <- c(2, 18, 8, 1)
 color_palette <- c("baseline", "oracle", "empty", "optim")
 names(color_palette) <- interested_metrics
 interested_tokens <- c(10, 20, 30)
@@ -621,9 +621,9 @@ ggplot2::ggsave("results/theoretical.pdf", p, width = 7, height = 5)
 ################################################################################
 ################################################################################
 
-interested_metrics <- c(1:28)
-interested_metrics_level <- c(1:28)
-color_palette <- c(1:28)
+interested_metrics <- c(1:22)
+interested_metrics_level <- c(1:22)
+color_palette <- c(1:22)
 names(color_palette) <- interested_metrics
 interested_tokens <- c(10, 20, 30, 40, 50)
 threshold <- 0.05
