@@ -1,23 +1,28 @@
-import torch
+from torch import bool as torch_bool
+
+from openai import OpenAI
+from torch import no_grad
+
+from torch import cat, ones, multinomial, randperm
 
 
 def substitution_attack(tokens, p, vocab_size, distribution=None):
     if distribution is None:
-        def distribution(x): return torch.ones(
+        def distribution(x): return ones(
             size=(len(tokens), vocab_size)) / vocab_size
-    idx = torch.randperm(len(tokens))[:int(p*len(tokens))]
+    idx = randperm(len(tokens))[:int(p*len(tokens))]
 
     new_probs = distribution(tokens)
-    samples = torch.multinomial(new_probs, 1).flatten()
+    samples = multinomial(new_probs, 1).flatten()
     tokens[idx] = samples[idx]
 
     return tokens, idx
 
 
 def deletion_attack(tokens, p):
-    idx = torch.randperm(len(tokens))[:int(p*len(tokens))]
+    idx = randperm(len(tokens))[:int(p*len(tokens))]
 
-    keep = torch.ones(len(tokens), dtype=torch.bool)
+    keep = ones(len(tokens), dtype=torch_bool)
     keep[idx] = False
     tokens = tokens[keep]
 
@@ -134,14 +139,14 @@ def deletion_attack_semantic(tokens, tokenizer):
 
 def insertion_attack(tokens, p, vocab_size, distribution=None):
     if distribution is None:
-        def distribution(x): return torch.ones(
+        def distribution(x): return ones(
             size=(len(tokens), vocab_size)) / vocab_size
-    idx = torch.randperm(len(tokens))[:int(p*len(tokens))]
+    idx = randperm(len(tokens))[:int(p*len(tokens))]
 
     new_probs = distribution(tokens)
-    samples = torch.multinomial(new_probs, 1)
+    samples = multinomial(new_probs, 1)
     for i in idx.sort(descending=True).values:
-        tokens = torch.cat([tokens[:i], samples[i], tokens[i:]])
+        tokens = cat([tokens[:i], samples[i], tokens[i:]])
         tokens[i] = samples[i]
 
     return tokens, idx
@@ -179,7 +184,7 @@ def insertion_attack_semantic(tokens, prompt, tokenizer, model, max_insert_lengt
     prefix = parts[0].strip() + ". "
 
     # Generate a new sentence to insert
-    with torch.no_grad():
+    with no_grad():
         # Encode the prefix
         prefix_ids = tokenizer.encode(
             prefix, return_tensors='pt', truncation=True, max_length=2048
@@ -197,7 +202,7 @@ def insertion_attack_semantic(tokens, prompt, tokenizer, model, max_insert_lengt
         prompt = prompt.to(device)
 
         # Concatenate prompt and prefix_ids along the sequence dimension (dim=1)
-        input_ids = torch.cat([prompt, prefix_ids], dim=1)
+        input_ids = cat([prompt, prefix_ids], dim=1)
 
         # Generate tokens until a period is generated to ensure a complete sentence
         generated_ids = model.generate(

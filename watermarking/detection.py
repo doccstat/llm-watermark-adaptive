@@ -1,14 +1,24 @@
-import torch
-import numpy as np
-import time
+from numpy import float64, log, inf, pi, tan
+from torch import unique
 from scipy.stats import cauchy
+
+from torch import Generator
+
+from numpy import (
+    array, full, sum as np_sum, reshape, sum as np_sum, atleast_1d, atleast_2d,
+    asarray as np_asarray, zeros, empty as numpy_empty, empty_like, isscalar
+)
+from torch import (
+    arange, argsort, asarray, empty as torch_empty, randint, max as torch_max,
+    min as torch_min, where, isfinite
+)
 from scipy.linalg import expm
 
 
 def quantile_test(
     tokens, vocab_size, n, k, seed, test_stats, ntps
 ):
-    generator = torch.Generator()
+    generator = Generator()
 
     test_results = []
 
@@ -21,8 +31,8 @@ def quantile_test(
                                 vocab_size=vocab_size)
         test_results.append(test_result)
 
-    p_vals = np.empty((3, len(test_stats)))
-    test_results = np.array(test_results)
+    p_vals = numpy_empty((3, len(test_stats)))
+    test_results = array(test_results)
     for test_stat_idx, test_stat in enumerate(test_stats):
         # This is a nasty hack to deal with the weights. This has to be corresponding to the
         # regularizations and experiments in the `./4-detect.py` file.
@@ -55,11 +65,11 @@ def quantile_test(
         if test_stat_idx in [0, 1, 2, 15, 28]:
             ntp = ntp
         elif test_stat_idx in [3, 16, 29]:
-            ntp = torch.where(ntp + 0.001 >= 1.0, ntp, ntp + 0.001)
+            ntp = where(ntp + 0.001 >= 1.0, ntp, ntp + 0.001)
         elif test_stat_idx in [4, 17, 30]:
-            ntp = torch.where(ntp + 0.01 >= 1.0, ntp, ntp + 0.01)
+            ntp = where(ntp + 0.01 >= 1.0, ntp, ntp + 0.01)
         elif test_stat_idx in [5, 18, 31]:
-            ntp = torch.where(ntp + 0.1 >= 1.0, ntp, ntp + 0.1)
+            ntp = where(ntp + 0.1 >= 1.0, ntp, ntp + 0.1)
         elif test_stat_idx in [6, 19, 32]:
             ntp = 0.9 * ntp + (1 - 0.9) * 0.5
         elif test_stat_idx in [7, 20, 33]:
@@ -82,7 +92,7 @@ def quantile_test(
         ntp = ntp / (1 - ntp) * len(ntp)
 
         test_statistics_before_combination = test_results[test_stat_idx]
-        pvalues_before_combination = np.empty_like(
+        pvalues_before_combination = empty_like(
             test_statistics_before_combination)
         # for each row in pvalues_before_combination, the ntp passed to phypoexp is the same
         # for each column, the ntp is different and can be obtained from `ntp` array
@@ -90,17 +100,17 @@ def quantile_test(
         for i in range(len(test_statistics_before_combination)):
             pvalues_before_combination[i] = phypoexp(
                 test_statistics_before_combination[i],
-                ntp[np.isfinite(ntp)][i:i+k]
+                ntp[isfinite(ntp)][i:i+k]
             )
         p_vals[0, test_stat_idx] = cauchy_combine(
-            np.reshape(pvalues_before_combination, (1, -1)))
-        p_values_column = np.empty(
+            reshape(pvalues_before_combination, (1, -1)))
+        p_values_column = numpy_empty(
             (1, test_statistics_before_combination.shape[1]))
         for i in range(test_statistics_before_combination.shape[1]):
             p_values_column[0, i] = cauchy_combine(
                 pvalues_before_combination[:, i])
         p_vals[1, test_stat_idx] = cauchy_combine(p_values_column)
-        p_values_row = np.empty(
+        p_values_row = numpy_empty(
             (1, test_statistics_before_combination.shape[0]))
         for i in range(test_statistics_before_combination.shape[0]):
             p_values_row[0, i] = cauchy_combine(pvalues_before_combination[i])
@@ -109,9 +119,9 @@ def quantile_test(
 
 
 def permutation_test(
-    tokens, vocab_size, n, k, seed, test_stats, log_file, n_runs=100, max_seed=100000
+    tokens, vocab_size, n, k, seed, test_stats, n_runs=100, max_seed=100000
 ):
-    generator = torch.Generator()
+    generator = Generator()
 
     test_results = []
 
@@ -124,18 +134,12 @@ def permutation_test(
                                 vocab_size=vocab_size)
         test_results.append(test_result)
 
-    test_results = np.array(test_results)
+    test_results = array(test_results)
     null_results = []
-    t0 = time.time()
-    log_file.write(f'Begin {n_runs} permutation tests\n')
-    log_file.flush()
     for run in range(n_runs):
-        if run % 100 == 0:
-            log_file.write(f'Run {run} (t = {time.time()-t0} seconds)\n')
-            log_file.flush()
         null_results.append([])
 
-        seed = torch.randint(high=max_seed, size=(1,)).item()
+        seed = randint(high=max_seed, size=(1,)).item()
         for test_stat in test_stats:
             generator.manual_seed(int(seed))
             null_result = test_stat(tokens=tokens,
@@ -145,9 +149,9 @@ def permutation_test(
                                     vocab_size=vocab_size,
                                     null=True)
             null_results[-1].append(null_result)
-    null_results = np.array(null_results)
+    null_results = array(null_results)
 
-    return (np.sum(null_results <= test_results, axis=0) + 1.0) / (n_runs + 1.0)
+    return (np_sum(null_results <= test_results, axis=0) + 1.0) / (n_runs + 1.0)
 
 
 def phi(
@@ -155,33 +159,33 @@ def phi(
         null=False, normalize=False, asis=True
 ):
     if null:
-        tokens = torch.unique(torch.asarray(
+        tokens = unique(asarray(
             tokens), return_inverse=True, sorted=False)[1]
-        eff_vocab_size = torch.max(tokens) + 1
+        eff_vocab_size = torch_max(tokens) + 1
     else:
         eff_vocab_size = vocab_size
 
     xi, pi = key_func(generator, n, vocab_size, eff_vocab_size)
-    tokens = torch.argsort(pi)[tokens]
+    tokens = argsort(pi)[tokens]
     if normalize:
         tokens = tokens.float() / vocab_size
 
     A = adjacency(tokens, xi, dist, k, empty_probs)
     if asis:
         return A
-    closest = torch.min(A, axis=1)[0]
+    closest = torch_min(A, axis=1)[0]
 
-    return torch.min(closest)
+    return torch_min(closest)
 
 
 def adjacency(tokens, xi, dist, k, empty_probs):
     m = len(tokens)
     n = len(xi)
 
-    A = torch.empty(size=(m-(k-1), n))
+    A = torch_empty(size=(m-(k-1), n))
     for i in range(m-(k-1)):
         for j in range(n):
-            A[i][j] = dist(tokens[i:i+k], xi[(j+torch.arange(k)) %
+            A[i][j] = dist(tokens[i:i+k], xi[(j+arange(k)) %
                            n], empty_probs[i:i+k])
 
     return A
@@ -212,12 +216,12 @@ def phypoexp(x, rate, lower_tail=True, log_p=False, tailarea=False):
         The CDF or survival function evaluated at x.
     """
     x_original = x  # Preserve original input for shape
-    x = np.atleast_1d(x).astype(np.float64)
-    rate = np.asarray(rate, dtype=np.float64)
+    x = atleast_1d(x).astype(float64)
+    rate = np_asarray(rate, dtype=float64)
     n = len(rate)
 
     # Construct the generator matrix Q with an absorbing state
-    Q = np.zeros((n + 1, n + 1), dtype=np.float64)
+    Q = zeros((n + 1, n + 1), dtype=float64)
 
     for i in range(n):
         Q[i, i] = -rate[i]
@@ -225,7 +229,7 @@ def phypoexp(x, rate, lower_tail=True, log_p=False, tailarea=False):
     Q[-1, -1] = 0.0  # Absorbing state
 
     # Initial state vector: all probability in the first phase
-    v = np.zeros(n + 1)
+    v = zeros(n + 1)
     v[0] = 1.0
 
     # Compute e^{Qx} for each x
@@ -240,13 +244,13 @@ def phypoexp(x, rate, lower_tail=True, log_p=False, tailarea=False):
             if not lower_tail:
                 P = 1.0 - P  # Invert the tail
         if log_p:
-            P = np.log(P) if P > 0 else -np.inf
+            P = log(P) if P > 0 else -inf
         probabilities.append(P)
 
-    probabilities = np.array(probabilities)
+    probabilities = array(probabilities)
 
     # Return scalar if input was scalar
-    if np.isscalar(x_original):
+    if isscalar(x_original):
         return probabilities[0]
     else:
         return probabilities
@@ -275,9 +279,9 @@ def cauchy_combine(pvalues, weights=None):
         If the dimensions of `weights` do not match those of `pvalues`.
     """
     # Convert pvalues to a NumPy array and ensure it's 2D
-    pvalues = np.asarray(pvalues)
+    pvalues = np_asarray(pvalues)
     if pvalues.ndim != 2:
-        pvalues = np.atleast_2d(pvalues)
+        pvalues = atleast_2d(pvalues)
 
     # Replace p-values of exactly 0 with a small value to avoid infinity in tan
     pvalues[pvalues == 0] = 5.55e-17
@@ -289,21 +293,21 @@ def cauchy_combine(pvalues, weights=None):
 
     # If weights are not provided, use equal weights
     if weights is None:
-        weights = np.full((num_genes, num_pvals), 1.0 / num_pvals)
+        weights = full((num_genes, num_pvals), 1.0 / num_pvals)
     else:
-        weights = np.asarray(weights)
+        weights = np_asarray(weights)
         if weights.shape != pvalues.shape:
             raise ValueError(
                 "The dimensions of weights do not match those of pvalues.")
 
     # Compute Cauchy statistics
-    Cstat = np.tan((0.5 - pvalues) * np.pi)
+    Cstat = tan((0.5 - pvalues) * pi)
 
     # Apply weights to the Cauchy statistics
     wCstat = weights * Cstat
 
     # Sum the weighted Cauchy statistics for each gene
-    Cbar = np.sum(wCstat, axis=1)
+    Cbar = np_sum(wCstat, axis=1)
 
     # Compute combined p-values using the Cauchy CDF
     combined_pval = 1.0 - cauchy.cdf(Cbar)
@@ -319,7 +323,7 @@ if __name__ == "__main__":
     rates = [1.0, 2.0, 2.0, 3.0]  # lambda=2.0 has multiplicity 2
 
     # Quantiles at which to evaluate the CDF
-    quantiles = np.array([0.5, 1.0, 1.5, 2.0])
+    quantiles = array([0.5, 1.0, 1.5, 2.0])
 
     # Compute the CDF
     print("CDF Values:", phypoexp(quantiles, rates))

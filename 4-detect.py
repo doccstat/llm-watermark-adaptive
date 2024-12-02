@@ -1,4 +1,4 @@
-import time
+from time import time
 import torch
 
 from collections import defaultdict
@@ -45,14 +45,7 @@ parser.add_argument('--truncate_vocab', default=8, type=int)
 args = parser.parse_args()
 results['args'] = copy.deepcopy(args)
 
-log_file = open(
-    'log/' + str(args.Tindex) + "-" +
-    args.token_file.split('results/')[1].split('.p')[0] + '.log', 'w'
-)
-log_file.write(str(args) + '\n')
-log_file.flush()
-
-t0 = time.time()
+t0 = time()
 
 if args.model == "facebook/opt-1.3b":
     vocab_size = 50272
@@ -69,8 +62,6 @@ else:
     print(model.get_output_embeddings().weight.shape[0])
     raise
 eff_vocab_size = vocab_size - args.truncate_vocab
-log_file.write(f'Loaded the model (t = {time.time()-t0} seconds)\n')
-log_file.flush()
 
 prompt_tokens = args.prompt_tokens      # minimum prompt length
 buffer_tokens = args.buffer_tokens
@@ -84,9 +75,6 @@ watermarked_samples = genfromtxt(
     args.token_file + '-attacked-tokens.csv', delimiter=",")
 # null_samples = genfromtxt(args.token_file + '-null.csv', delimiter=",")
 Tindex = min(args.Tindex, watermarked_samples.shape[0])
-log_file.write(f'Loaded the samples (t = {time.time()-t0} seconds)\n')
-log_file.flush()
-
 
 if args.method == "transform":
     test_stats = []
@@ -1853,7 +1841,6 @@ def test(tokens, seed, test_stats):
                             k,
                             seed,
                             test_stats,
-                            log_file=log_file,
                             n_runs=args.n_runs)
     return quantile_test(
         tokens,
@@ -1901,7 +1888,7 @@ def test(tokens, seed, test_stats):
     )
 
 
-t1 = time.time()
+t1 = time()
 
 # csv_saves = []
 # csvWriters = []
@@ -1918,10 +1905,8 @@ t1 = time.time()
 
 watermarked_sample = watermarked_samples[Tindex, :]
 
-t0 = time.time()
+t0 = time()
 watermarked_pval = test(watermarked_sample, seeds[Tindex], test_stats)
-log_file.write(f'Ran watermarked test in (t = {time.time()-t0} seconds)\n')
-log_file.flush()
 if watermarked_pval.ndim == 1:
     watermarked_pval = watermarked_pval.reshape(1, -1)
 np.savetxt(
@@ -1930,9 +1915,6 @@ np.savetxt(
 )
 # csvWriters[0].writerow(np.asarray(watermarked_pval))
 # csv_saves[0].flush()
-log_file.write(args.token_file + '/' + str(args.Tindex) + ' done')
-log_file.write(f'Ran the experiment (t = {time.time()-t1} seconds)\n')
-log_file.close()
 
 # for csv_save in csv_saves:
 #     csv_save.close()
