@@ -1,7 +1,8 @@
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
 from os.path import exists
 from os import makedirs
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # Load the dataset (this might take a while depending on the internet
 # connection and the dataset size)
