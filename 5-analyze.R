@@ -1,26 +1,25 @@
 set.seed(1)
 
 folder <- "results/"
-models <- c("meta-llama/Meta-Llama-3-8B", "mistralai/Mistral-7B-v0.1")
-models_folders_prefix <- c("ml3", "mt7")
-generation_methods <- c("gumbel", "transform")
-attacks <- c("substitution", "deletion", "insertion")
-k_tokens_count_ratio_list <- c(0.3, 0.6, 1.0)
+models <- c("mistralai/Mistral-7B-v0.1")
+models_folders_prefix <- c("mt7")
+generation_methods <- c("gumbel")
+# attacks <- c("substitution")
+attacks <- c("deletion", "insertion", "substitution")
+k_tokens_count_ratio_list <- c(1.0)
 watermark_key_token_pairs <- matrix(c(
   10, 10,
   20, 20,
-  30, 30,
-  40, 40,
-  50, 50
+  30, 30
 ), ncol = 2, byrow = TRUE)
 attack_pcts <- list(
   "substitution" = c("0.0", "0.1", "0.2", "0.3"),
+  # "substitution" = c("1.0"),
   "deletion" = c("1.0"),
   "insertion" = c("1.0")
 )
-watermarked_or_null <- c("watermarked")
 
-pvalue_files_templates <- matrix(NA, 0, 17)
+pvalue_files_templates <- matrix(NA, 0, 15)
 for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) { # nolint
   watermark_key_length <- watermark_key_token_pairs[wkt_index, 1]
   tokens_count <- watermark_key_token_pairs[wkt_index, 2]
@@ -31,27 +30,23 @@ for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) { # nolint
         for (attack_index in seq_along(attacks)) {
           attack_pcts_seq <- attack_pcts[[attacks[attack_index]]]
           for (attack_pct in attack_pcts_seq) {
-            for (watermarked_or_null_index in seq_along(watermarked_or_null)) {
-              pvalue_files_templates <- rbind(pvalue_files_templates, c(
-                folder,
-                models_folders_prefix[model_index],
-                "-",
-                generation_methods[generation_methods_index],
-                "-",
-                attacks[attack_index],
-                "-",
-                watermark_key_length,
-                "-",
-                tokens_count,
-                "-",
-                attack_pct,
-                "-",
-                max_k,
-                "-detect/",
-                watermarked_or_null[watermarked_or_null_index],
-                "-XXX.csv"
-              ))
-            }
+            pvalue_files_templates <- rbind(pvalue_files_templates, c(
+              folder,
+              models_folders_prefix[model_index],
+              "-",
+              generation_methods[generation_methods_index],
+              "-",
+              attacks[attack_index],
+              "-",
+              watermark_key_length,
+              "-",
+              tokens_count,
+              "-",
+              attack_pct,
+              "-",
+              max_k,
+              "-detect/watermarked-XXX.csv"
+            ))
           }
         }
       }
@@ -59,7 +54,7 @@ for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) { # nolint
   }
 }
 
-prompt_count <- 100
+prompt_count <- 1000
 dfs <- list()
 filename <- sub("XXX", 0, paste0(pvalue_files_templates[1, ], collapse = ""))
 metric_count <- ncol(read.csv(filename, header = FALSE))
@@ -79,7 +74,7 @@ for (template_index in seq_len(nrow(pvalue_files_templates))) {
       )
       matrix(t(as.matrix(tryCatch(
         read.csv(filename, header = FALSE),
-        error = function(e) matrix(NA, criteria_count, metric_count)
+        error = function(e) stop(paste("Error in", filename, ":", e))
       )))[seq_len(metric_count), seq_len(criteria_count)])
     }
   )
@@ -196,8 +191,8 @@ for (model_prefix in models_folders_prefix) {
 
 ################################################################################
 
-interested_metrics <- c(1, 2, 8, 18)
-interested_metrics_level <- c(2, 18, 8, 1)
+interested_metrics <- c(1, 2, 3, 4)
+interested_metrics_level <- c(2, 4, 3, 1)
 color_palette <- c("baseline", "oracle", "empty", "optim")
 names(color_palette) <- interested_metrics
 interested_tokens <- c(10, 20, 30)
@@ -239,7 +234,7 @@ for (model_prefix in models_folders_prefix) {
     theoretical_df_power_llm$B / theoretical_df_power_llm$TokensCount
   p <- ggplot2::ggplot(
     theoretical_df_power_llm,
-    ggplot2::aes(x = TokensCount, y = x.Mean, color = Metric)
+    ggplot2::aes(x = TokensCount, y = x.Mean, color = Criteria)
   ) +
     ggplot2::geom_line() +
     ggplot2::geom_errorbar(
@@ -248,7 +243,7 @@ for (model_prefix in models_folders_prefix) {
     ) +
     ggplot2::scale_color_hue(labels = color_palette) +
     ggplot2::facet_grid(
-      Criteria ~ k_tokens_count_ratio,
+       ~ k_tokens_count_ratio,
       labeller = ggplot2::labeller(
         k_tokens_count_ratio = c("0.3" = "B/m: 0.3", "0.6" = "B/m: 0.6", "1" = "B/m: 1.0")
       )
@@ -621,11 +616,11 @@ ggplot2::ggsave("results/theoretical.pdf", p, width = 7, height = 5)
 ################################################################################
 ################################################################################
 
-interested_metrics <- c(1:22)
-interested_metrics_level <- c(1:22)
-color_palette <- c(1:22)
+interested_metrics <- c(1, 2, 11, 24)
+interested_metrics_level <- c(2, 24, 11, 1)
+color_palette <- c("baseline", "oracle", "empty", "optim")
 names(color_palette) <- interested_metrics
-interested_tokens <- c(10, 20, 30, 40, 50)
+interested_tokens <- c(10, 20, 30)
 threshold <- 0.05
 
 for (model_prefix in models_folders_prefix) {
@@ -801,7 +796,6 @@ attack_pcts <- list(
   "insertion" = c("1.0"),
   "substitution" = c("0.0")
 )
-watermarked_or_null <- c("watermarked")
 
 pvalue_files_templates <- matrix(NA, 0, 17)
 for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) { # nolint
@@ -813,27 +807,24 @@ for (wkt_index in seq_len(nrow(watermark_key_token_pairs))) { # nolint
       for (attack_index in seq_along(attacks)) {
         attack_pcts_seq <- attack_pcts[[attacks[attack_index]]]
         for (attack_pct in attack_pcts_seq) {
-          for (watermarked_or_null_index in seq_along(watermarked_or_null)) {
-            pvalue_files_templates <- rbind(pvalue_files_templates, c(
-              folder,
-              models_folders_prefix[model_index],
-              "-",
-              generation_methods[generation_methods_index],
-              "-",
-              attacks[attack_index],
-              "-",
-              watermark_key_length,
-              "-",
-              tokens_count,
-              "-",
-              attack_pct,
-              ifelse(generation_methods[generation_methods_index] == "gumbel", "", "-"),
-              ifelse(generation_methods[generation_methods_index] == "gumbel", "", max_k),
-              ifelse(generation_methods[generation_methods_index] == "gumbel", ".p-detect/", "-detect/"),
-              watermarked_or_null[watermarked_or_null_index],
-              "-XXX.csv"
-            ))
-          }
+          pvalue_files_templates <- rbind(pvalue_files_templates, c(
+            folder,
+            models_folders_prefix[model_index],
+            "-",
+            generation_methods[generation_methods_index],
+            "-",
+            attacks[attack_index],
+            "-",
+            watermark_key_length,
+            "-",
+            tokens_count,
+            "-",
+            attack_pct,
+            ifelse(generation_methods[generation_methods_index] == "gumbel", "", "-"),
+            ifelse(generation_methods[generation_methods_index] == "gumbel", "", max_k),
+            ifelse(generation_methods[generation_methods_index] == "gumbel", ".p-detect/", "-detect/"),
+            "watermarked-XXX.csv"
+          ))
         }
       }
     }
@@ -960,3 +951,92 @@ ggplot2::ggsave(
   width = 4.2,
   height = 1.9
 )
+
+#  LLM       Attack TokensCount AttackPct  B PromptIndex Metric Criteria PValue
+
+for (model_prefix in models_folders_prefix) {
+  plot_df <- df[df$LLM == model_prefix, ]
+  plot_df <- aggregate(
+    plot_df$PValue <= 0.05,
+    by = list(
+      TokensCount = plot_df$TokensCount,
+      Criteria = plot_df$Criteria
+    ),
+    FUN = function(x) c(Mean = mean(x, na.rm = TRUE), StdError = sd(x, na.rm = TRUE) / sqrt(length(x)))
+  )
+  plot_df <- do.call(data.frame, plot_df)
+  plot_df$TokensCount <- as.numeric(plot_df$TokensCount)
+  plot_df$Criteria <- factor(plot_df$Criteria)
+
+  ggplot2::ggplot(
+    plot_df,
+    ggplot2::aes(x = TokensCount, y = x.Mean, color = Criteria)
+  ) +
+    ggplot2::geom_line() +
+    ggplot2::geom_errorbar(
+      ggplot2::aes(ymin = x.Mean - x.StdError, ymax = x.Mean + x.StdError),
+      width = 0.5
+    ) +
+    ggplot2::theme_minimal() +
+    ggplot2::xlab("Text length") +
+    ggplot2::ylab("Type I Error Rate") +
+    ggplot2::scale_x_continuous(
+      breaks = c(10, 20, 30),
+      labels = c(10, 20, 30)
+    )
+}
+
+df_without_substitution <- df[
+  !((df$Attack == "substitution") & (df$AttackPct == 0)) &
+    !((df$Attack == "deletion") & (df$Metric == 2)) &
+    !((df$Attack == "insertion") & (df$Metric == 2)),
+]
+
+powers <- aggregate(
+  df_without_substitution$PValue <= 0.05,
+  by = list(
+    LLM = df_without_substitution$LLM,
+    Attack = df_without_substitution$Attack,
+    TokensCount = df_without_substitution$TokensCount,
+    B = df_without_substitution$B,
+    Metric = df_without_substitution$Metric
+  ),
+  FUN = function(x) c(Mean = mean(x, na.rm = TRUE), StdError = sd(x, na.rm = TRUE) / sqrt(length(x)))
+)
+powers <- do.call(data.frame, powers)
+powers$Attack[powers$Attack == "substitution"] <- "no attack"
+powers$Metric[powers$Metric == 1] <- "baseline"
+powers$Metric[powers$Metric == 2] <- "oracle"
+powers$Metric[powers$Metric == 11] <- "empty"
+powers$Metric[powers$Metric == 24] <- "optim"
+powers$Metric <- factor(powers$Metric, levels = c("oracle", "optim", "empty", "baseline"))
+powers$TokensCount <- as.numeric(powers$TokensCount)
+powers$Attack <- factor(powers$Attack, levels = c("no attack", "deletion", "insertion"))
+
+for (model_prefix in models_folders_prefix) {
+  powers_llm <- powers[powers$LLM == model_prefix, ]
+
+  ggplot2::ggplot(
+    powers_llm,
+    ggplot2::aes(x = TokensCount, y = x.Mean, color = Metric)
+  ) +
+    ggplot2::geom_line() +
+    ggplot2::geom_errorbar(
+      ggplot2::aes(ymin = x.Mean - x.StdError, ymax = x.Mean + x.StdError),
+      width = 0.2
+    ) +
+    ggplot2::facet_grid(~Attack) +
+    ggplot2::theme_minimal() +
+    ggplot2::xlab("Text length") +
+    ggplot2::ylab("Power") +
+    ggplot2::scale_x_continuous(
+      breaks = c(10, 20, 30),
+      labels = c(10, 20, 30)
+    ) +
+    ggplot2::theme(legend.position = "bottom")
+  ggplot2::ggsave(
+    paste0(model_prefix, "-EMS-power.pdf"),
+    width = 8,
+    height = 2.5
+  )
+}
