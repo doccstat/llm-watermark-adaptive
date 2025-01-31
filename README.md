@@ -74,3 +74,7 @@ Rscript 5-analyze.R
   url={https://openreview.net/forum?id=S2QoDt4bw4}
 }
 ```
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/doccstat/llm-watermark-adaptive.svg)](https://starchart.cc/doccstat/llm-watermark-adaptive)
