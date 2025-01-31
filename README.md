@@ -29,9 +29,8 @@ Implementation of the methods described in "A Likelihood Based Approach for Wate
 ### Set up environments
 
 ```shell
-# Refer to https://pytorch.org/get-started/locally for PyTorch installation.
-# Refer to https://huggingface.co/docs/transformers/en/installation
-# for Transformers installation.
+# PyTorch: https://pytorch.org/get-started/locally
+# Transformers: https://huggingface.co/docs/transformers/en/installation
 conda install cython scipy nltk sentencepiece sacremoses
 ```
 
