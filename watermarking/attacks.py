@@ -6,29 +6,6 @@ from torch import no_grad
 from torch import cat, ones, multinomial, randperm
 
 
-def substitution_attack(tokens, p, vocab_size, distribution=None):
-    if distribution is None:
-        def distribution(x): return ones(
-            size=(len(tokens), vocab_size)) / vocab_size
-    idx = randperm(len(tokens))[:int(p*len(tokens))]
-
-    new_probs = distribution(tokens)
-    samples = multinomial(new_probs, 1).flatten()
-    tokens[idx] = samples[idx]
-
-    return tokens, idx
-
-
-def deletion_attack(tokens, p):
-    idx = randperm(len(tokens))[:int(p*len(tokens))]
-
-    keep = ones(len(tokens), dtype=torch_bool)
-    keep[idx] = False
-    tokens = tokens[keep]
-
-    return tokens, idx
-
-
 def is_sublist(sub, main):
     """
     Checks if 'sub' list is a sublist of 'main' list.
@@ -135,21 +112,6 @@ def deletion_attack_semantic(tokens, tokenizer):
     attack_span = (attack_start, attack_end)
 
     return attacked_tokens, attack_span
-
-
-def insertion_attack(tokens, p, vocab_size, distribution=None):
-    if distribution is None:
-        def distribution(x): return ones(
-            size=(len(tokens), vocab_size)) / vocab_size
-    idx = randperm(len(tokens))[:int(p*len(tokens))]
-
-    new_probs = distribution(tokens)
-    samples = multinomial(new_probs, 1)
-    for i in idx.sort(descending=True).values:
-        tokens = cat([tokens[:i], samples[i], tokens[i:]])
-        tokens[i] = samples[i]
-
-    return tokens, idx
 
 
 def insertion_attack_semantic(tokens, prompt, tokenizer, model, max_insert_length=50):

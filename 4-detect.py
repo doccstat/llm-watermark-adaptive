@@ -7,7 +7,7 @@ import copy
 import numpy as np
 from numpy import genfromtxt
 
-from watermarking.detection import permutation_test, phi, quantile_test
+from watermarking.detection import permutation_test, phi
 
 from watermarking.transform.score import transform_score, transform_adaptive
 from watermarking.transform.key import transform_key_func
@@ -1842,50 +1842,6 @@ def test(tokens, seed, test_stats):
                             seed,
                             test_stats,
                             n_runs=args.n_runs)
-    return quantile_test(
-        tokens,
-        vocab_size,
-        n,
-        k,
-        seed,
-        test_stats,
-        [
-            torch.from_numpy(np.ones(tokens.shape[0]) * 0.5),
-            torch.from_numpy(genfromtxt(
-                args.token_file + '-re-calculated-probs.csv', delimiter=','
-            )[Tindex, :]),
-            torch.from_numpy(genfromtxt(
-                args.token_file + '-re-calculated-empty-probs.csv', delimiter=','
-            )[Tindex, :]),
-            torch.from_numpy(genfromtxt(
-                args.token_file + '-re-calculated-best-probs.csv', delimiter=','
-            )[Tindex, :]),
-            torch.from_numpy(genfromtxt(
-                args.token_file + '-re-calculated-icl-probs.csv', delimiter=','
-            )[Tindex, :]),
-            torch.from_numpy(genfromtxt(
-                args.token_file + '-re-calculated-20-probs.csv', delimiter=','
-            )[Tindex, :]),
-            torch.from_numpy(genfromtxt(
-                args.token_file + '-re-calculated-40-probs.csv', delimiter=','
-            )[Tindex, :]),
-            torch.from_numpy(genfromtxt(
-                args.token_file + '-re-calculated-60-probs.csv', delimiter=','
-            )[Tindex, :]),
-            torch.from_numpy(genfromtxt(
-                args.token_file + '-re-calculated-80-probs.csv', delimiter=','
-            )[Tindex, :]),
-            torch.from_numpy(genfromtxt(
-                args.token_file + '-re-calculated-90-probs.csv', delimiter=','
-            )[Tindex, :]),
-            torch.from_numpy(genfromtxt(
-                args.token_file + '-re-calculated-96-probs.csv', delimiter=','
-            )[Tindex, :]),
-            torch.from_numpy(genfromtxt(
-                args.token_file + '-re-calculated-98-probs.csv', delimiter=','
-            )[Tindex, :])
-        ]
-    )
 
 
 t1 = time()
