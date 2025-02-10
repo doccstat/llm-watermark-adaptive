@@ -66,9 +66,9 @@ Rscript 5-analyze.R
 
 ```bibtex
 @inproceedings{
-  anonymous2025a,
+  li2025a,
   title={A Likelihood Based Approach for Watermark Detection},
-  author={Anonymous},
+  author={Xingchi Li and Guanxun Li and Xianyang Zhang},
   booktitle={The 28th International Conference on Artificial Intelligence and Statistics},
   year={2025},
   url={https://openreview.net/forum?id=S2QoDt4bw4}
