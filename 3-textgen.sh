@@ -9,16 +9,16 @@
 #SBATCH --gres=gpu:a30:2
 
 #SBATCH --mem=70GB
-#SBATCH --output=/home/anthony.li/llm-watermark-adaptive/log/textgen.%A.%a.out
-#SBATCH --error=/home/anthony.li/llm-watermark-adaptive/log/textgen.%A.%a.err
+#SBATCH --output=/scratch/user/anthony.li/llm-watermark-adaptive/log/textgen.%A.%a.out
+#SBATCH --error=/scratch/user/anthony.li/llm-watermark-adaptive/log/textgen.%A.%a.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anthony.li@tamu.edu
-#SBATCH --array=1-30
+#SBATCH --array=1-48
 
 module purge
 module load Python/3.11.5-GCCcore-13.2.0
 
-cd /home/anthony.li/llm-watermark-adaptive
+cd /scratch/user/anthony.li/llm-watermark-adaptive
 
 mkdir -p results
 mkdir -p log
@@ -32,7 +32,7 @@ export HF_HOME=/scratch/user/anthony.li/hf_cache
 
 # Determine the total number of commands by counting lines in 3-textgen-commands.sh
 total_commands=$(wc -l < 3-textgen-commands.sh)
-total_jobs=30
+total_jobs=48
 
 # Calculate the number of commands per job (minimum)
 commands_per_job=$((total_commands / total_jobs))

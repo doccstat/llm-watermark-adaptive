@@ -6,8 +6,8 @@
 #SBATCH --time=1-00:00:00
 #SBATCH --partition=medium,long,xlong
 #SBATCH --mem-per-cpu=500MB
-#SBATCH --output=/home/anthony.li/llm-watermark-adaptive/log/detect.%A.%a.out
-#SBATCH --error=/home/anthony.li/llm-watermark-adaptive/log/detect.%A.%a.err
+#SBATCH --output=/scratch/user/anthony.li/llm-watermark-adaptive/log/detect.%A.%a.out
+#SBATCH --error=/scratch/user/anthony.li/llm-watermark-adaptive/log/detect.%A.%a.err
 #SBATCH --mail-type=FAIL,TIME_LIMIT,END
 #SBATCH --mail-user=anthony.li@tamu.edu
 #SBATCH --array=1-1000
@@ -15,7 +15,7 @@
 module purge
 module load Python/3.11.5-GCCcore-13.2.0
 
-cd /home/anthony.li/llm-watermark-adaptive
+cd /scratch/user/anthony.li/llm-watermark-adaptive
 
 echo "Starting job with ID ${SLURM_JOB_ID} on ${SLURM_JOB_NODELIST}"
 
