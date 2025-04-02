@@ -56,6 +56,7 @@ def phi(tokens,
         vocab_size,
         dist,
         empty_probs,
+        ntps,
         null=False,
         normalize=False,
         asis=True):
@@ -67,10 +68,14 @@ def phi(tokens,
 
     xi, pi = key_func(generator, n, vocab_size, eff_vocab_size)
     tokens = argsort(pi)[tokens]
+    # TODO(doccstat): The correctness of the following line is questionable.
+    # But for `pi = arange(vocab_size)`, it should not matter.
+    # ntps = ntps[argsort(pi), :]
+
     if normalize:
         tokens = tokens.float() / vocab_size
 
-    A = adjacency(tokens, xi, dist, k, empty_probs)
+    A = adjacency(tokens, xi, dist, k, empty_probs, ntps)
     if asis:
         return A
     closest = torch_min(A, axis=1)[0]
@@ -78,7 +83,7 @@ def phi(tokens,
     return torch_min(closest)
 
 
-def adjacency(tokens, xi, dist, k, empty_probs):
+def adjacency(tokens, xi, dist, k, empty_probs, ntps):
     m = len(tokens)
     n = len(xi)
 
@@ -86,6 +91,6 @@ def adjacency(tokens, xi, dist, k, empty_probs):
     for i in range(m - (k - 1)):
         for j in range(n):
             A[i][j] = dist(tokens[i:i + k], xi[(j + arange(k)) % n],
-                           empty_probs[i:i + k])
+                           empty_probs[i:i + k], ntps[:, i:i + k])
 
     return A

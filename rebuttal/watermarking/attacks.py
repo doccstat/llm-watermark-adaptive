@@ -1,9 +1,4 @@
-from torch import bool as torch_bool
-
-from openai import OpenAI
-from torch import no_grad
-
-from torch import cat, ones, multinomial, randperm
+from torch import no_grad, cat
 
 
 def is_sublist(sub, main):

@@ -70,8 +70,15 @@ def generate(model,
     # save probs and empty_probs for each token. Concatenate probs column by column
     # and empty_probs column by column. So in the end it should be a matrix of
     # batch_size x vocab_size x m
-    probs_save = torch.zeros((batch_size, vocab_size, 0))
-    empty_probs_save = torch.zeros((batch_size, vocab_size, 0)).to(model.device)
+
+    # probs_save = torch.zeros((batch_size, vocab_size, 0))
+    # empty_probs_save = torch.zeros(
+    #     (batch_size, vocab_size, 0)).to(model.device)
+
+    # For trivial permutations `pi` in ITS, only need to save the interval
+    # which watermark belongs to.
+    probs_save = torch.zeros((batch_size, 2, 0))
+    empty_probs_save = torch.zeros((batch_size, 2, 0)).to(model.device)
 
     for i in range(m):
         with torch.no_grad():
@@ -90,9 +97,10 @@ def generate(model,
         empty_probs = torch.nn.functional.softmax(empty_output.logits[:, -1],
                                                   dim=-1)
 
-        probs_save = torch.cat([probs_save, probs.unsqueeze(-1)], dim=-1)
-        empty_probs_save = torch.cat(
-            [empty_probs_save, empty_probs.unsqueeze(-1)], dim=-1)
+        # Full NTPs save are required for non-trivial permutations in ITS.
+        # probs_save = torch.cat([probs_save, probs.unsqueeze(-1)], dim=-1)
+        # empty_probs_save = torch.cat(
+        #     [empty_probs_save, empty_probs.unsqueeze(-1)], dim=-1)
 
         if fixed_inputs is None:
             tokens, sampling_prob = sampler(
@@ -101,6 +109,37 @@ def generate(model,
         else:
             tokens = fixed_inputs[:, i].unsqueeze(1)
             sampling_prob = torch.gather(probs, 1, tokens)
+
+        # For trivial permutations `pi` in ITS, only need to save the interval
+        # which watermark belongs to.
+        # Save the NTPs only for ITS.
+        if xis.shape[2] == 1:
+            cdf = torch.cumsum(torch.gather(probs, 1, pis), 1)
+            # indices = torch.gather(pis, 1, torch.searchsorted(cdf, xis[torch.arange(batch_size), (offset.squeeze()+i) % n]))
+            cdf = torch.cat(
+                [torch.zeros((batch_size, 1), dtype=torch.float64), cdf], 1)
+            probs_save = torch.cat([
+                probs_save,
+                torch.cat([
+                    torch.gather(cdf, 1, tokens),
+                    torch.gather(cdf, 1, tokens + 1)
+                ], 1).unsqueeze(-1)
+            ],
+                                   dim=2)
+
+            cdf = torch.cumsum(torch.gather(empty_probs.cpu(), 1, pis), 1)
+            # indices = torch.gather(pis, 1, torch.searchsorted(cdf, xis[torch.arange(batch_size), (offset.squeeze()+i) % n]))
+            cdf = torch.cat(
+                [torch.zeros((batch_size, 1), dtype=torch.float64), cdf], 1)
+            empty_probs_save = torch.cat([
+                empty_probs_save.cpu(),
+                torch.cat([
+                    torch.gather(cdf, 1, tokens),
+                    torch.gather(cdf, 1, tokens + 1)
+                ], 1).unsqueeze(-1)
+            ],
+                                         dim=2)
+
         tokens = tokens.to(model.device)
         empty_sampling_prob = torch.gather(empty_probs, 1, tokens)
         sampling_prob = sampling_prob.to(model.device)
@@ -189,8 +228,14 @@ def generate_mixed(model,
     past = None
     empty_past = None
 
-    probs_save = torch.zeros((batch_size, vocab_size, 0))
-    empty_probs_save = torch.zeros((batch_size, vocab_size, 0)).to(model.device)
+    # probs_save = torch.zeros((batch_size, vocab_size, 0))
+    # empty_probs_save = torch.zeros(
+    #     (batch_size, vocab_size, 0)).to(model.device)
+
+    # For trivial permutations `pi` in ITS, only need to save the interval
+    # which watermark belongs to.
+    probs_save = torch.zeros((batch_size, 2, 0))
+    empty_probs_save = torch.zeros((batch_size, 2, 0)).to(model.device)
 
     for i in range(m):
         with torch.no_grad():
@@ -209,9 +254,10 @@ def generate_mixed(model,
         empty_probs = torch.nn.functional.softmax(empty_output.logits[:, -1],
                                                   dim=-1)
 
-        probs_save = torch.cat([probs_save, probs.unsqueeze(-1)], dim=-1)
-        empty_probs_save = torch.cat(
-            [empty_probs_save, empty_probs.unsqueeze(-1)], dim=-1)
+        # Full NTPs save are required for non-trivial permutations in ITS.
+        # probs_save = torch.cat([probs_save, probs.unsqueeze(-1)], dim=-1)
+        # empty_probs_save = torch.cat(
+        #     [empty_probs_save, empty_probs.unsqueeze(-1)], dim=-1)
 
         if fixed_inputs is not None:
             tokens = fixed_inputs[:, i].unsqueeze(1)
@@ -262,6 +308,36 @@ def generate_mixed(model,
             tokens[rows_no_watermark] = tokens_no_watermark
             sampling_prob[rows_no_watermark] = sampling_prob_no_watermark
 
+        # For trivial permutations `pi` in ITS, only need to save the interval
+        # which watermark belongs to.
+        # Save the NTPs only for ITS.
+        if xis.shape[2] == 1:
+            cdf = torch.cumsum(torch.gather(probs, 1, pis), 1)
+            # indices = torch.gather(pis, 1, torch.searchsorted(cdf, xis[torch.arange(batch_size), (offset.squeeze()+i) % n]))
+            cdf = torch.cat(
+                [torch.zeros((batch_size, 1), dtype=torch.float64), cdf], 1)
+            probs_save = torch.cat([
+                probs_save,
+                torch.cat([
+                    torch.gather(cdf, 1, tokens),
+                    torch.gather(cdf, 1, tokens + 1)
+                ], 1).unsqueeze(-1)
+            ],
+                                   dim=2)
+
+            cdf = torch.cumsum(torch.gather(empty_probs.cpu(), 1, pis), 1)
+            # indices = torch.gather(pis, 1, torch.searchsorted(cdf, xis[torch.arange(batch_size), (offset.squeeze()+i) % n]))
+            cdf = torch.cat(
+                [torch.zeros((batch_size, 1), dtype=torch.float64), cdf], 1)
+            empty_probs_save = torch.cat([
+                empty_probs_save.cpu(),
+                torch.cat([
+                    torch.gather(cdf, 1, tokens),
+                    torch.gather(cdf, 1, tokens + 1)
+                ], 1).unsqueeze(-1)
+            ],
+                                         dim=2)
+
         tokens = tokens.to(model.device)
         empty_sampling_prob = torch.gather(empty_probs, 1, tokens)
         sampling_prob = sampling_prob.to(model.device)
@@ -282,122 +358,6 @@ def generate_mixed(model,
 
     return (inputs.detach().cpu(), sampling_probs.detach().cpu(),
             empty_sampling_probs.detach().cpu(), probs_save, empty_probs_save)
-
-
-def get_probs(model, prompts, vocab_size, n, m, seeds, key_func, fixed_inputs):
-    """
-    Obtain the sampling probabilities for generated sequences using a language model.
-
-    Args:
-        model (torch.nn.Module): The language model.
-        prompts (torch.Tensor): The input prompts for generation.
-        vocab_size (int): The size of the vocabulary.
-        n (int): The number of watermarked sequences.
-        m (int): The number of tokens to generate.
-        seeds (List[int]): The seeds for random number generation.
-        key_func (Callable): The function to generate watermark keys.
-        fixed_inputs (torch.Tensor): The fixed inputs for generation.
-            Defaults to None.
-
-    Returns:
-        torch.Tensor: sampling probabilities.
-    """
-    batch_size = len(prompts)
-
-    generator = torch.Generator()
-    xis, pis = [], []
-    for seed in seeds:
-        generator.manual_seed(int(seed))
-        xi, pi = key_func(generator, n, vocab_size)
-        xis.append(xi.unsqueeze(0))
-        pis.append(pi.unsqueeze(0))
-    xis = torch.vstack(xis)
-    pis = torch.vstack(pis)
-
-    inputs = prompts.to(model.device)
-    sampling_probs = torch.zeros((batch_size, 0)).to(model.device)
-    attn = torch.ones_like(inputs)
-
-    past = None
-
-    for i in range(m):
-        with torch.no_grad():
-            if past:
-                output = model(inputs[:, -1:],
-                               past_key_values=past,
-                               attention_mask=attn)
-            else:
-                output = model(inputs)
-
-        probs = torch.nn.functional.softmax(output.logits[:, -1], dim=-1)
-
-        tokens = fixed_inputs[:, i].unsqueeze(1)
-        tokens = tokens.to(model.device)
-        sampling_prob = torch.gather(probs, 1, tokens)
-
-        sampling_probs = torch.cat([sampling_probs, sampling_prob], dim=-1)
-
-        inputs = torch.cat([inputs, tokens], dim=-1)
-        past = output.past_key_values
-        attn = torch.cat([attn, attn.new_ones((attn.shape[0], 1))], dim=-1)
-
-    return sampling_probs.detach().cpu()
-
-
-# generate unwatermarked completions of token length m given list of prompts
-
-
-def generate_rnd(prompts, m, model, empty_prompts):
-    inputs = prompts.to(model.device)
-    empty_inputs = empty_prompts.to(model.device)
-
-    attn = torch.ones_like(inputs)
-    empty_attn = torch.ones_like(empty_inputs)
-
-    past = None
-    empty_past = None
-
-    sampling_probs = torch.zeros((inputs.shape[0], 0)).to(model.device)
-    empty_sampling_probs = torch.zeros((inputs.shape[0], 0)).to(model.device)
-
-    for i in range(m):
-        with torch.no_grad():
-            if past:
-                output = model(inputs[:, -1:],
-                               past_key_values=past,
-                               attention_mask=attn)
-                empty_output = model(empty_inputs[:, -1:],
-                                     past_key_values=empty_past,
-                                     attention_mask=empty_attn)
-            else:
-                output = model(inputs)
-                empty_output = model(empty_inputs)
-
-        probs = torch.nn.functional.softmax(output.logits[:, -1], dim=-1)
-        empty_probs = torch.nn.functional.softmax(empty_output.logits[:, -1],
-                                                  dim=-1)
-
-        tokens = torch.multinomial(probs, 1)
-
-        sampling_prob = torch.gather(probs, 1, tokens)
-        empty_sampling_prob = torch.gather(empty_probs, 1, tokens)
-
-        sampling_probs = torch.cat([sampling_probs, sampling_prob], dim=-1)
-        empty_sampling_probs = torch.cat(
-            [empty_sampling_probs, empty_sampling_prob], dim=-1)
-
-        inputs = torch.cat([inputs, tokens], dim=1)
-        empty_inputs = torch.cat([empty_inputs, tokens], dim=1)
-
-        past = output.past_key_values
-        empty_past = empty_output.past_key_values
-
-        attn = torch.cat([attn, attn.new_ones((attn.shape[0], 1))], dim=-1)
-        empty_attn = torch.cat(
-            [empty_attn, attn.new_ones((attn.shape[0], 1))], dim=-1)
-
-    return (inputs.detach().cpu(), sampling_probs.detach().cpu(),
-            empty_sampling_probs.detach().cpu())
 
 
 def gpt_prompt(text: str, key: str) -> str:
