@@ -97,6 +97,8 @@ Rscript 5-analyze.R
 }
 ```
 
+</details>
+
 ## Stargazers over time
 
 [![Stargazers over time](https://starchart.cc/doccstat/llm-watermark-adaptive.svg)](https://starchart.cc/doccstat/llm-watermark-adaptive)
